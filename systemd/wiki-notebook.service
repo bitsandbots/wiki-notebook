@@ -1,0 +1,37 @@
+[Unit]
+Description=Wiki Notebook - Self-hosted offline-first journal and wiki
+Documentation=https://github.com/coreconduit/wiki-notebook
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/wiki-notebook
+ExecStart=/usr/bin/python -m wiki_notebook
+Restart=on-failure
+RestartSec=5
+
+# Environment
+Environment="FLASK_ENV=production"
+Environment="DATABASE_URL=/var/lib/wiki-notebook/notebook.db"
+Environment="OLLAMA_URL=http://localhost:11434"
+Environment="OLLAMA_MODEL=qwen2.5:7b-instruct"
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/wiki-notebook
+ReadWritePaths=/var/www/wiki-notebook
+PrivateTmp=true
+RestrictSUIDSGID=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=wiki-notebook
+
+[Install]
+WantedBy=multi-user.target

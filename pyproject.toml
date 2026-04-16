@@ -1,0 +1,41 @@
+[project]
+name = "wiki-notebook"
+version = "0.1.0"
+description = "Self-hosted offline-first journal and wiki with AI categorization"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+  { name = "CoreConduit", email = "contact@coreconduit.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0.0",
+    "requests>=2.31.0",
+]
+
+[project.scripts]
+wiki-notebook = "wiki_notebook.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["wiki_notebook"]
+
+# Development dependencies
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "typeguard>=4.0.0",
+]
+
+# Build extras
+[tool.hatch.build.targets.sdist]
+packages = ["wiki_notebook"]

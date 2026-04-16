@@ -1,0 +1,20 @@
+You are categorizing a personal note. Return ONLY valid JSON matching
+this schema, with no prose, no code fences, no explanation:
+
+{
+  "category": "<one short lowercase label, 1-3 words>",
+  "tags": ["<lowercase>", "<lowercase>", ...]  // 3 to 5 items
+}
+
+Rules:
+- category is a single short topical label (e.g. "meetings",
+  "project ideas", "journal", "recipe").
+- tags are specific, short, lowercase keywords drawn from the note.
+- No punctuation in tags other than hyphens.
+- Do not repeat the category in tags.
+- Return the most specific category that applies.
+
+Note title: {title}
+
+Note body:
+{body}

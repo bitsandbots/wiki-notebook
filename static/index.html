@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiki Notebook</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Topbar -->
+        <header class="topbar">
+            <h1 class="topbar-title">Wiki Notebook</h1>
+            <div class="topbar-search">
+                <input type="text" id="search-input" placeholder="Search notes…" aria-label="Search notes">
+                <span class="search-hint">/ to search</span>
+            </div>
+        </header>
+
+        <div class="main">
+            <!-- Sidebar / Categories -->
+            <aside class="sidebar">
+                <h2 class="sidebar-title">Categories</h2>
+                <ul id="category-list" class="category-list">
+                    <li class="category-item active" data-category="">
+                        <span class="category-name">All</span>
+                        <span class="category-count">0</span>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- Main content area -->
+            <main class="content">
+                <!-- Editor / Note view -->
+                <div id="editor-container" class="editor-container">
+                    <input type="text" id="note-title" class="note-title" placeholder="Note title…">
+                    <textarea id="note-body" class="note-body" placeholder="Write your note here… (Markdown supported)"></textarea>
+                    <div class="editor-actions">
+                        <button type="button" id="preview-toggle" class="btn btn-secondary">Preview</button>
+                        <button type="button" id="save-btn" class="btn btn-primary">
+                            <span class="btn-text">Save</span>
+                            <span class="btn-spinner" style="display:none;">Saving…</span>
+                        </button>
+                        <button type="button" id="delete-btn" class="btn btn-danger" style="display:none;">Delete</button>
+                        <button type="button" id="undo-btn" class="btn btn-link" style="display:none;" title="Undo last optimize">Undo</button>
+                    </div>
+                    <div class="editor-shortcut">
+                        Ctrl+Enter to save
+                    </div>
+                </div>
+
+                <div id="notes-list-container" class="notes-list-container">
+                    <h2 class="section-title">Recent</h2>
+                    <div id="notes-list" class="notes-list">
+                        <!-- Notes loaded here -->
+                    </div>
+                    <div id="empty-state" class="empty-state">
+                        <p>No notes yet. Create your first note!</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Action bar (for multi-select) -->
+        <div id="action-bar" class="action-bar" style="display:none;">
+            <div class="action-bar-content">
+                <span class="action-bar-count">0 notes selected</span>
+                <button type="button" class="btn btn-primary" id="combine-concat-btn">Combine (concatenate)</button>
+                <button type="button" class="btn btn-secondary" id="combine-ai-btn" disabled title="Ollama unavailable">Combine (AI)</button>
+                <button type="button" class="btn btn-link" id="clear-selection-btn">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/vendor/marked.min.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
