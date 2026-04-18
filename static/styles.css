@@ -137,6 +137,8 @@
   --cc-success-bg:    rgba(26,154,74,0.15);
   --cc-warning-bg:    rgba(192,138,21,0.15);
   --cc-error-bg:      rgba(212,48,48,0.15);
+  --cc-link-color:    var(--cc-blue-300);  /* visible on dark bg */
+  --cc-focus-ring:    #4a9eff;             /* visible on dark bg */
 }
 
 /* ── Base ──────────────────────────────────────────────────────────────── */
@@ -307,13 +309,6 @@ a:hover { color: var(--cc-blue-600); text-decoration-thickness: 3px; }
 /* ============================================================
    LAYOUT
    ============================================================ */
-#app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-}
-
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .layout {
   display: grid;
