@@ -1,241 +1,427 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light" data-contrast="default" data-motion="default" data-font="default">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html>
+<html
+  lang="en"
+  data-theme="light"
+  data-contrast="default"
+  data-motion="default"
+  data-font="default"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Wiki|Note</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/styles.css" />
     <!-- Blocking theme detection — must run before CSS paints to prevent FOUC -->
     <script>
-    (function () {
-      try {
-        var t = localStorage.getItem('wiki-note-theme');
-        var dark = t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-      } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'light');
-      }
-    })();
+      (function () {
+        try {
+          var t = localStorage.getItem("wiki-note-theme");
+          var dark = t
+            ? t === "dark"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.setAttribute(
+            "data-theme",
+            dark ? "dark" : "light",
+          );
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      })();
     </script>
-</head>
-<body>
+  </head>
+  <body>
+    <!-- Skip to main content (WCAG 2.4.1) -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
 
-<!-- Skip to main content (WCAG 2.4.1) -->
-<a href="#main-content" class="skip-link">Skip to main content</a>
-
-<!-- Header -->
-<header class="site-header" role="banner">
-    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle navigation">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
+    <!-- Header -->
+    <header class="site-header" role="banner">
+      <button
+        class="sidebar-toggle"
+        id="sidebar-toggle"
+        aria-label="Toggle navigation"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
         </svg>
-    </button>
+      </button>
 
-    <a href="/" class="site-logo" aria-label="Wiki Notebook home">
+      <a href="/" class="site-logo" aria-label="Wiki Notebook home">
         <div class="logo-mark"><span class="cc-inner">WN</span></div>
         <span>Wiki<span class="accent">Note</span></span>
-    </a>
+      </a>
 
-    <div class="header-search" role="search">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      <div class="header-search" role="search">
+        <svg
+          class="search-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
         </svg>
-        <input type="search" id="search-input" placeholder="Search notes…" aria-label="Search notes" autocomplete="off">
-    </div>
+        <input
+          type="search"
+          id="search-input"
+          placeholder="Search notes…"
+          aria-label="Search notes"
+          autocomplete="off"
+        />
+      </div>
 
-    <div class="header-a11y-controls">
+      <div class="header-a11y-controls">
         <!-- Dark mode toggle -->
-        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" aria-pressed="false">
-            <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>
-            <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
-                <circle cx="12" cy="12" r="5"/>
-                <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
+        <button
+          class="theme-toggle"
+          id="theme-toggle"
+          aria-label="Toggle dark mode"
+          aria-pressed="false"
+        >
+          <svg
+            id="theme-icon-moon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+          <svg
+            id="theme-icon-sun"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            style="display: none"
+          >
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
         </button>
         <!-- High contrast toggle -->
-        <button class="a11y-toggle" id="btn-contrast" aria-label="Toggle high contrast" aria-pressed="false" title="High contrast">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/><path d="M12 2v20M2 12h20"/>
-            </svg>
+        <button
+          class="a11y-toggle"
+          id="btn-contrast"
+          aria-label="Toggle high contrast"
+          aria-pressed="false"
+          title="High contrast"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 2v20M2 12h20" />
+          </svg>
         </button>
         <!-- Dyslexia-friendly font toggle -->
-        <button class="a11y-toggle" id="btn-font" aria-label="Toggle dyslexia-friendly font" aria-pressed="false" title="Legible font">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-                <text x="2" y="18" font-size="16" font-weight="bold">A</text>
-            </svg>
+        <button
+          class="a11y-toggle"
+          id="btn-font"
+          aria-label="Toggle dyslexia-friendly font"
+          aria-pressed="false"
+          title="Legible font"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <text x="2" y="18" font-size="16" font-weight="bold">A</text>
+          </svg>
         </button>
-    </div>
-</header>
+      </div>
+    </header>
 
-<!-- Mobile sidebar overlay -->
-<div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <!-- Mobile sidebar overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-<!-- App layout -->
-<div class="layout">
-
-    <!-- Sidebar / Categories -->
-    <aside class="sidebar" id="sidebar" aria-label="Categories">
+    <!-- App layout -->
+    <div class="layout">
+      <!-- Sidebar / Categories -->
+      <aside class="sidebar" id="sidebar" aria-label="Categories">
         <span class="sidebar-label">Categories</span>
-        <ul id="category-list" class="category-list" aria-label="Note categories">
-            <li class="category-item active" data-category="">
-                <span class="category-name">All</span>
-                <span class="category-count" aria-live="polite">0</span>
-            </li>
+        <ul
+          id="category-list"
+          class="category-list"
+          aria-label="Note categories"
+        >
+          <li class="category-item active" data-category="">
+            <span class="category-name">All</span>
+            <span class="category-count" aria-live="polite">0</span>
+          </li>
         </ul>
-    </aside>
+      </aside>
 
-    <!-- Main content -->
-    <main class="main" id="main-content">
+      <!-- Main content -->
+      <main class="main" id="main-content">
         <div class="page-content">
+          <!-- Editor / Note view -->
+          <section
+            id="editor-container"
+            class="editor-container"
+            aria-label="Note editor"
+          >
+            <input
+              type="text"
+              id="note-title"
+              class="note-title"
+              placeholder="Note title…"
+              aria-label="Note title"
+            />
+            <textarea
+              id="note-body"
+              class="note-body"
+              placeholder="Write your note here… (Markdown supported)"
+              aria-label="Note body (Markdown supported)"
+            ></textarea>
+            <div
+              class="editor-actions"
+              role="group"
+              aria-label="Editor actions"
+            >
+              <button
+                type="button"
+                id="preview-toggle"
+                class="btn btn-secondary"
+                aria-label="Toggle preview"
+              >
+                Preview
+              </button>
+              <button
+                type="button"
+                id="save-btn"
+                class="btn btn-primary"
+                aria-label="Save note (Ctrl+Enter)"
+              >
+                <span class="btn-text">Save</span>
+                <span
+                  class="btn-spinner"
+                  style="display: none"
+                  aria-hidden="true"
+                  >Saving…</span
+                >
+              </button>
+              <button
+                type="button"
+                id="delete-btn"
+                class="btn btn-danger"
+                style="display: none"
+                aria-label="Delete this note"
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                id="undo-btn"
+                class="btn btn-link"
+                style="display: none"
+                aria-label="Undo last AI optimization"
+              >
+                Undo
+              </button>
+            </div>
+            <div class="editor-shortcut" aria-hidden="true">
+              Ctrl+Enter to save
+            </div>
+          </section>
 
-            <!-- Editor / Note view -->
-            <section id="editor-container" class="editor-container" aria-label="Note editor">
-                <input type="text" id="note-title" class="note-title" placeholder="Note title…" aria-label="Note title">
-                <textarea id="note-body" class="note-body" placeholder="Write your note here… (Markdown supported)" aria-label="Note body (Markdown supported)"></textarea>
-                <div class="editor-actions" role="group" aria-label="Editor actions">
-                    <button type="button" id="preview-toggle" class="btn btn-secondary" aria-label="Toggle preview">Preview</button>
-                    <button type="button" id="save-btn" class="btn btn-primary" aria-label="Save note (Ctrl+Enter)">
-                        <span class="btn-text">Save</span>
-                        <span class="btn-spinner" style="display:none;" aria-hidden="true">Saving…</span>
-                    </button>
-                    <button type="button" id="delete-btn" class="btn btn-danger" style="display:none;" aria-label="Delete this note">Delete</button>
-                    <button type="button" id="undo-btn" class="btn btn-link" style="display:none;" aria-label="Undo last AI optimization">Undo</button>
-                </div>
-                <div class="editor-shortcut" aria-hidden="true">Ctrl+Enter to save</div>
-            </section>
-
-            <!-- Notes list -->
-            <section id="notes-list-container" class="notes-list-container" aria-label="Notes list">
-                <h2 class="section-title">Recent</h2>
-                <ul id="notes-list" class="notes-list" role="list"></ul>
-                <div id="empty-state" class="empty-state" role="status" aria-live="polite">
-                    <p>No notes yet. Create your first note!</p>
-                </div>
-            </section>
-
+          <!-- Notes list -->
+          <section
+            id="notes-list-container"
+            class="notes-list-container"
+            aria-label="Notes list"
+          >
+            <h2 class="section-title">Recent</h2>
+            <ul id="notes-list" class="notes-list" role="list"></ul>
+            <div
+              id="empty-state"
+              class="empty-state"
+              role="status"
+              aria-live="polite"
+            >
+              <p>No notes yet. Create your first note!</p>
+            </div>
+          </section>
         </div>
 
         <footer class="site-footer">
-            <span class="footer-logo">Wiki<span class="accent">Note</span></span>
-            <span>Self-hosted · Offline-first</span>
+          <span class="footer-logo">Wiki<span class="accent">Note</span></span>
+          <span>Self-hosted · Offline-first</span>
         </footer>
-    </main>
-
-</div><!-- .layout -->
-
-<!-- Action bar (multi-select) -->
-<footer id="action-bar" class="action-bar" style="display:none;" aria-label="Multi-select actions">
-    <div class="action-bar-content">
-        <span class="action-bar-count" id="selection-count" aria-live="polite">0 notes selected</span>
-        <button type="button" class="btn btn-primary" id="combine-concat-btn" aria-label="Combine selected notes by concatenating">Combine (concatenate)</button>
-        <button type="button" class="btn btn-secondary" id="combine-ai-btn" disabled title="Ollama unavailable" aria-label="Combine selected notes using AI (Ollama)">Combine (AI)</button>
-        <button type="button" class="btn btn-link" id="clear-selection-btn" aria-label="Clear selection">Clear</button>
+      </main>
     </div>
-</footer>
+    <!-- .layout -->
 
-<!-- Scripts -->
-<script src="/static/vendor/marked.min.js"></script>
-<script src="/static/vendor/dompurify.min.js"></script>
-<script src="/static/a11y.js"></script>
-<script src="/static/app.js"></script>
-<script>
-(function () {
-  const html = document.documentElement;
+    <!-- Action bar (multi-select) -->
+    <footer
+      id="action-bar"
+      class="action-bar"
+      style="display: none"
+      aria-label="Multi-select actions"
+    >
+      <div class="action-bar-content">
+        <span class="action-bar-count" id="selection-count" aria-live="polite"
+          >0 notes selected</span
+        >
+        <button
+          type="button"
+          class="btn btn-primary"
+          id="combine-concat-btn"
+          aria-label="Combine selected notes by concatenating"
+        >
+          Combine (concatenate)
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          id="combine-ai-btn"
+          disabled
+          title="Ollama unavailable"
+          aria-label="Combine selected notes using AI (Ollama)"
+        >
+          Combine (AI)
+        </button>
+        <button
+          type="button"
+          class="btn btn-link"
+          id="clear-selection-btn"
+          aria-label="Clear selection"
+        >
+          Clear
+        </button>
+      </div>
+    </footer>
 
-  // ── Dark mode (theme already set in <head> — sync icons and aria-pressed) ──
-  const toggle = document.getElementById('theme-toggle');
-  const moon = document.getElementById('theme-icon-moon');
-  const sun  = document.getElementById('theme-icon-sun');
+    <!-- Scripts -->
+    <script src="/static/vendor/marked.min.js"></script>
+    <script src="/static/vendor/dompurify.min.js"></script>
+    <script src="/static/a11y.js"></script>
+    <script src="/static/app.js"></script>
+    <script>
+      (function () {
+        const html = document.documentElement;
 
-  function applyTheme(dark) {
-    html.setAttribute('data-theme', dark ? 'dark' : 'light');
-    if (moon) moon.style.display = dark ? 'none' : '';
-    if (sun)  sun.style.display  = dark ? '' : 'none';
-    if (toggle) toggle.setAttribute('aria-pressed', dark ? 'true' : 'false');
-  }
+        // ── Dark mode (theme already set in <head> — sync icons and aria-pressed) ──
+        const toggle = document.getElementById("theme-toggle");
+        const moon = document.getElementById("theme-icon-moon");
+        const sun = document.getElementById("theme-icon-sun");
 
-  // Sync icons with data-theme already applied by the <head> script
-  applyTheme(html.getAttribute('data-theme') === 'dark');
+        function applyTheme(dark) {
+          html.setAttribute("data-theme", dark ? "dark" : "light");
+          if (moon) moon.style.display = dark ? "none" : "";
+          if (sun) sun.style.display = dark ? "" : "none";
+          if (toggle)
+            toggle.setAttribute("aria-pressed", dark ? "true" : "false");
+        }
 
-  if (toggle) {
-    toggle.addEventListener('click', function () {
-      const isDark = html.getAttribute('data-theme') === 'dark';
-      applyTheme(!isDark);
-      try {
-        localStorage.setItem('wiki-note-theme', !isDark ? 'dark' : 'light');
-      } catch (e) {
-        console.warn('[theme] Could not persist theme preference:', e.message);
-      }
-    });
-  } else {
-    console.error('[theme] #theme-toggle not found — dark mode toggle disabled');
-  }
+        // Sync icons with data-theme already applied by the <head> script
+        applyTheme(html.getAttribute("data-theme") === "dark");
 
-  // ── Mobile sidebar ──
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  const sidebarBtn = document.getElementById('sidebar-toggle');
+        if (toggle) {
+          toggle.addEventListener("click", function () {
+            const isDark = html.getAttribute("data-theme") === "dark";
+            applyTheme(!isDark);
+            try {
+              localStorage.setItem(
+                "wiki-note-theme",
+                !isDark ? "dark" : "light",
+              );
+            } catch (e) {
+              console.warn(
+                "[theme] Could not persist theme preference:",
+                e.message,
+              );
+            }
+          });
+        } else {
+          console.error(
+            "[theme] #theme-toggle not found — dark mode toggle disabled",
+          );
+        }
 
-  function getFocusable() {
-    return Array.from(sidebar.querySelectorAll(
-      'a, button, input, [tabindex]:not([tabindex="-1"])'
-    )).filter(function (el) { return !el.disabled; });
-  }
+        // ── Mobile sidebar ──
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebar-overlay");
+        const sidebarBtn = document.getElementById("sidebar-toggle");
 
-  function openSidebar() {
-    sidebar.classList.add('open');
-    overlay.classList.add('open');
-    sidebarBtn.setAttribute('aria-expanded', 'true');
-    const first = getFocusable()[0];
-    if (first) first.focus();
-  }
+        function getFocusable() {
+          return Array.from(
+            sidebar.querySelectorAll(
+              'a, button, input, [tabindex]:not([tabindex="-1"])',
+            ),
+          ).filter(function (el) {
+            return !el.disabled;
+          });
+        }
 
-  function closeSidebar() {
-    sidebar.classList.remove('open');
-    overlay.classList.remove('open');
-    sidebarBtn.setAttribute('aria-expanded', 'false');
-    sidebarBtn.focus();  // restore focus to trigger
-  }
+        function openSidebar() {
+          sidebar.classList.add("open");
+          overlay.classList.add("open");
+          sidebarBtn.setAttribute("aria-expanded", "true");
+          const first = getFocusable()[0];
+          if (first) first.focus();
+        }
 
-  if (sidebarBtn) {
-    sidebarBtn.addEventListener('click', function () {
-      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
-    });
-  }
-  if (overlay) {
-    overlay.addEventListener('click', closeSidebar);
-  }
+        function closeSidebar() {
+          sidebar.classList.remove("open");
+          overlay.classList.remove("open");
+          sidebarBtn.setAttribute("aria-expanded", "false");
+          sidebarBtn.focus(); // restore focus to trigger
+        }
 
-  // Escape closes the sidebar
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && sidebar.classList.contains('open')) {
-      closeSidebar();
-    }
-  });
+        if (sidebarBtn) {
+          sidebarBtn.addEventListener("click", function () {
+            sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
+          });
+        }
+        if (overlay) {
+          overlay.addEventListener("click", closeSidebar);
+        }
 
-  // Focus trap — only active when sidebar is open as a modal overlay (≤700px)
-  if (sidebar) {
-    sidebar.addEventListener('keydown', function (e) {
-      if (e.key !== 'Tab' || !sidebar.classList.contains('open')) return;
-      const focusable = getFocusable();
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-      } else {
-        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
-    });
-  }
-})();
-</script>
-</body>
+        // Escape closes the sidebar
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && sidebar.classList.contains("open")) {
+            closeSidebar();
+          }
+        });
+
+        // Focus trap — only active when sidebar is open as a modal overlay (≤700px)
+        if (sidebar) {
+          sidebar.addEventListener("keydown", function (e) {
+            if (e.key !== "Tab" || !sidebar.classList.contains("open")) return;
+            const focusable = getFocusable();
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey) {
+              if (document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+              }
+            } else {
+              if (document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+              }
+            }
+          });
+        }
+      })();
+    </script>
+  </body>
 </html>

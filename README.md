@@ -23,9 +23,8 @@ and insight generation.
 
 Wiki Notebook is fully accessible to users with disabilities:
 
-- **Text sizing** — 3 levels (default, large, extra-large)
 - **High contrast mode** — AA+ color ratios for low vision users
-- **Dyslexia-friendly font** — Atkinson Hyperlegible toggle
+- **Dyslexia-friendly font** — Legible font toggle (Verdana, wide letterforms)
 - **Reduced motion** — Respects OS preference + manual toggle
 - **Keyboard navigation** — All features via Tab, skip link, Ctrl+Enter
 - **Screen reader support** — Semantic HTML + 21+ ARIA labels
