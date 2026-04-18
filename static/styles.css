@@ -195,10 +195,10 @@ a:hover { color: var(--blue); text-decoration-thickness: 3px; }
   box-shadow: 0 0 0 5px rgba(255,211,77,0.35);
 }
 
-/* Skip link (visible on focus) */
+/* Skip link (hidden off-screen, revealed on keyboard focus) */
 .skip-link {
   position: absolute;
-  top: 8px;
+  top: -100px;
   left: 8px;
   z-index: 10000;
   padding: 8px 16px;
@@ -208,6 +208,10 @@ a:hover { color: var(--blue); text-decoration-thickness: 3px; }
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
+  transition: top 0.1s ease;
+}
+.skip-link:focus {
+  top: 8px;
 }
 .skip-link:focus-visible {
   outline: 3px solid var(--focus-ring-halo);
@@ -261,11 +265,16 @@ a:hover { color: var(--blue); text-decoration-thickness: 3px; }
   padding: 0.25rem 0.5rem;
 }
 
-.a11y-control select,
 .a11y-control input[type="checkbox"] {
   cursor: pointer;
-  min-width: 44px;
-  min-height: 44px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--blue);
+}
+
+.a11y-control select {
+  cursor: pointer;
   accent-color: var(--blue);
 }
 

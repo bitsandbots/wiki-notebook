@@ -1,7 +1,7 @@
 /** Wiki Notebook - Vanilla JS Application */
 
 // Security: Sanitize HTML with DOMPurify before rendering
-const purify = DOMPurify ? DOMPurify(window) : { sanitize: (html) => html };
+const purify = typeof DOMPurify !== 'undefined' ? DOMPurify : { sanitize: (html) => html };
 
 const api = {
     list: ({ category, limit, offset, order } = {}) => {
@@ -94,10 +94,11 @@ function renderCategories(categories, activeCategory) {
     if (!list) return;
 
     let html = '';
-    // "All" category
+    // "All" category — total across all categories
+    const totalCount = categories.reduce((sum, c) => sum + (c.count || 0), 0);
     html += `<li class="category-item ${!activeCategory ? 'active' : ''}" data-category="">
         <span class="category-name">All</span>
-        <span class="category-count">${categories.find(c => c.name === 'All')?.count || 0}</span>
+        <span class="category-count">${totalCount}</span>
     </li>`;
 
     for (const cat of categories) {
@@ -129,13 +130,17 @@ function renderNotes(notes, isSearch = false) {
             ? `<div class="note-card-tags" aria-label="Tags">${note.tags.map(t => `<span class="note-card-tag">${t}</span>`).join('')}</div>`
             : '';
         const titleHtml = note.title || 'Untitled';
-        const snippet = note.snippet || note.body?.substring(0, 200) || '';
+        const rawSnippet = note.body?.substring(0, 200) || '';
+        // Search results provide pre-formatted HTML snippets; regular cards render markdown
+        const snippet = isSearch
+            ? (note.snippet || rawSnippet)
+            : purify.sanitize(marked.parse(rawSnippet));
         const formattedDate = formatDateTime(note.updated_at);
 
         const isSelected = state.selectedIds.has(note.id);
         const checkboxHtml = !isSearch
             ? `<label class="note-card-checkbox">
-                <input type="checkbox" checked="${isSelected}" data-note-id="${note.id}" aria-label="Select ${titleHtml}">
+                <input type="checkbox" ${isSelected ? 'checked' : ''} data-note-id="${note.id}" aria-label="Select ${titleHtml}">
                 <span class="checkbox-icon" aria-hidden="true"></span>
             </label>`
             : '';
@@ -408,9 +413,10 @@ function handleKeydown(e) {
 
 // Initialize
 function init() {
-    // Load categories
+    // Load categories then render notes
     api.categories().then(data => {
         renderCategories(data.items, null);
+        renderApp();
     });
 
     // Load health and check Ollama
