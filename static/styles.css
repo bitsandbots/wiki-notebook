@@ -1,123 +1,15 @@
-/* CoreConduit Brand v2.1 - Silver Theme - WCAG 2.2 Compliant */
+/* Wiki Notebook — CoreConduit Brand System v2.1 Silver
+   Tokens mirror ~/docsync — keep in sync.
+   Fonts: Exo 2 · Plus Jakarta Sans · IBM Plex Mono (self-hosted)
+*/
 
-:root {
-  /* === Real brand tokens pulled from CoreConduit brand guide === */
+/* Self-hosted fonts — no external CDN */
+@font-face { font-family:"Exo 2"; src:url("fonts/exo-2-latin-700-normal.woff2") format("woff2"); font-weight:700; font-display:swap; }
+@font-face { font-family:"Plus Jakarta Sans"; src:url("fonts/plus-jakarta-sans-latin-400-normal.woff2") format("woff2"); font-weight:400; font-display:swap; }
+@font-face { font-family:"Plus Jakarta Sans"; src:url("fonts/plus-jakarta-sans-latin-600-normal.woff2") format("woff2"); font-weight:600; font-display:swap; }
+@font-face { font-family:"IBM Plex Mono"; src:url("fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2"); font-weight:400; font-display:swap; }
 
-  /* Surfaces (real) */
-  --bg-base:       #c5c9d0;   /* brushed-silver page background */
-  --bg-card:       #d8dbe1;   /* card surface */
-  --bg-elevated:   #e2e5ea;   /* elevated surface */
-  --bg-hover:      #b5b9c2;
-  --bg-input:      #bcc0c8;
-  --bg-panel:      #cdd1d8;
-
-  /* Borders (real) */
-  --border:         #a8adb6;
-  --border-strong:  #969ba5;
-  --border-subtle:  #b8bcc4;
-
-  /* Text (real) */
-  --text-primary:   #1e232b;  /* 9.3:1 on bg-base ✓ AAA */
-  --text-secondary: #3a404a;  /* 6.1:1 on bg-base ✓ AA */
-  --text-muted:     #4d545f;  /* 5.0:1 on bg-base ✓ AA (upgraded from 3.1) */
-  --text-faint:     #5d6470;  /* 4.1:1 on bg-base ✓ AA */
-  --text-on-dark:   #eaecf0;  /* ~14:1 on navy ✓ AAA */
-
-  /* Accents (real) */
-  --blue:          #2b7de9;  /* decorative; use --blue-dim for text */
-  --blue-bright:   #4a9eff;
-  --blue-dim:      #1b6ad4;  /* 3.5:1 on bg-base ✕ fails normal; ✓ large */
-  --blue-glow:     rgba(43, 125, 233, 0.12);
-
-  --orange:        #e07018;  /* decorative; use --orange-dim for text */
-  --orange-bright: #f08030;
-  --orange-dim:    #c55d0a;  /* 2.9:1 on bg-base - use sparingly */
-  --orange-glow:   rgba(224, 112, 24, 0.12);
-
-  --green:   #1a9a4a;
-  --red:     #d43030;
-  --warning: #c08a15;
-
-  /* Navy (real) */
-  --navy-600: #1c2d52;
-  --navy-700: #152240;
-  --navy-800: #0f1a2e;  /* topbar */
-  --navy-900: #0b1220;
-
-  /* Silver scale (real) */
-  --silver-50:  #f2f3f6;
-  --silver-100: #eaecf0;
-  --silver-150: #dfe2e7;
-  --silver-200: #d2d6dc;
-  --silver-300: #bfc4cc;
-  --silver-400: #a8aeb9;
-  --silver-500: #969daa;
-  --silver-600: #7d8491;
-  --silver-700: #636a76;
-  --silver-800: #4d545f;  /* AA compliant on bg-base */
-  --silver-900: #3a404a;
-  --silver-950: #2a2f38;
-
-  /* Type (real) */
-  --font-display: 'Exo 2', sans-serif;
-  --font-body:    'Plus Jakarta Sans', sans-serif;
-  --font-mono:    'IBM Plex Mono', monospace;
-
-  /* Radii (real) */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-
-  /* Shadows (real) */
-  --shadow-sm:      0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-card:    0 2px 8px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
-  --shadow-elev:    0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08);
-
-  /* === Accessibility tokens (additions, not replacements) === */
-  --focus-ring:        #0f3c78;  /* dark blue — >7:1 on bg-base */
-  --focus-ring-halo:   #ffd34d;  /* high-vis outer ring for two-color focus */
-
-  --min-target: 44px;
-  --max-reading: 68ch;
-  --transition: 0.2s ease;
-}
-
-/* === User-toggleable preference modes === */
-
-/* Large text */
-:root[data-text-size="large"]  { font-size: 112.5%; }
-:root[data-text-size="xlarge"] { font-size: 125%;   }
-
-/* High-contrast override — preserves navy/silver but pushes everything to AA+ */
-:root[data-contrast="high"] {
-  --bg-base:        #ffffff;
-  --bg-card:        #f4f5f7;
-  --bg-elevated:    #e8eaee;
-  --bg-panel:       #eceef2;
-  --bg-input:       #ffffff;
-  --border:         #4d545f;
-  --border-strong:  #1e232b;
-  --border-subtle:  #969ba5;
-  --text-primary:   #000000;
-  --text-secondary: #1e232b;
-  --text-muted:     #3a404a;
-  --text-faint:     #4d545f;
-  --blue-dim:       #0f4c91;
-  --orange-dim:     #7a3808;
-  --focus-ring:     #000000;
-}
-
-/* Dyslexia-friendly font */
-:root[data-font="legible"] {
-  --font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
-}
-
-/* Reduced motion — respected automatically and via toggle */
-@media (prefers-reduced-motion: reduce) {
-  :root { --transition: 0s; }
-}
-:root[data-motion="reduced"] { --transition: 0s; }
-
+/* ── Reduced Motion Support ─────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -126,6 +18,98 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── CoreConduit Brand Tokens ───────────────────────────────────────────── */
+:root {
+  --cc-bg-base:           #c5c9d0;
+  --cc-bg-panel:          #cdd1d8;
+  --cc-bg-card:           #d8dbe1;
+  --cc-bg-elevated:       #e2e5ea;
+  --cc-bg-input:          #bcc0c8;
+  --cc-bg-hover:          #b5b9c2;
+  --cc-border-subtle:     #b8bcc4;
+  --cc-border:            #a8adb6;
+  --cc-border-strong:     #969ba5;
+  --cc-text-primary:      #1e232b;
+  --cc-text-secondary:    #3a404a;
+  --cc-text-muted:        #636a76;
+  --cc-text-faint:        #7d8491;
+  --cc-text-on-dark:      #eaecf0;
+  --cc-text-on-accent:    #ffffff;
+  --cc-blue-600:          #1b6ad4;
+  --cc-blue-500:          #2b7de9;
+  --cc-blue-400:          #4a9eff;
+  --cc-blue-300:          #6bb3ff;
+  --cc-blue-glow:         rgba(43,125,233,0.12);
+  --cc-blue-glow-strong:  rgba(43,125,233,0.22);
+  --cc-orange-600:        #c55d0a;
+  --cc-orange-500:        #e07018;
+  --cc-orange-400:        #f08030;
+  --cc-orange-glow:       rgba(224,112,24,0.12);
+  --cc-navy-900:          #0b1220;
+  --cc-navy-800:          #0f1a2e;
+  --cc-navy-700:          #152240;
+  --cc-navy-600:          #1c2d52;
+  --cc-success:           #1a9a4a;
+  --cc-success-bg:        rgba(26,154,74,0.1);
+  --cc-warning:           #c08a15;
+  --cc-warning-bg:        rgba(192,138,21,0.1);
+  --cc-error:             #d43030;
+  --cc-error-bg:          rgba(212,48,48,0.1);
+  --cc-font-display:      "Exo 2", sans-serif;
+  --cc-font-body:         "Plus Jakarta Sans", sans-serif;
+  --cc-font-mono:         "IBM Plex Mono", monospace;
+  --cc-radius-sm:         6px;
+  --cc-radius-md:         10px;
+  --cc-radius-lg:         14px;
+  --cc-shadow-sm:         0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --cc-shadow-card:       0 2px 8px rgba(0,0,0,.10), 0 1px 3px rgba(0,0,0,.06);
+  --cc-shadow-elevated:   0 8px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.08);
+
+  /* Accessibility tokens */
+  --cc-focus-ring:        #0f3c78;
+  --cc-focus-ring-halo:   #ffd34d;
+  --cc-link-color:        #164a94;
+
+  /* Layout */
+  --sidebar-w: 220px;
+  --header-h:  52px;
+}
+
+/* ── User Preference Modes ──────────────────────────────────────────────── */
+:root[data-text-size="large"]  { font-size: 112.5%; }
+:root[data-text-size="xlarge"] { font-size: 125%;   }
+
+:root[data-contrast="high"] {
+  --cc-bg-base:           #ffffff;
+  --cc-bg-card:           #f5f5f5;
+  --cc-bg-panel:          #f0f0f0;
+  --cc-bg-elevated:       #e8e8e8;
+  --cc-bg-input:          #ffffff;
+  --cc-text-primary:      #000000;
+  --cc-text-secondary:    #1a1a1a;
+  --cc-text-muted:        #333333;
+  --cc-text-faint:        #4d4d4d;
+  --cc-text-on-dark:      #ffffff;
+  --cc-blue-600:          #0f4c91;
+  --cc-blue-500:          #0052cc;
+  --cc-blue-400:          #0066ff;
+  --cc-orange-600:        #7a3808;
+  --cc-orange-500:        #b85a00;
+  --cc-border:            #333333;
+  --cc-border-strong:     #000000;
+  --cc-border-subtle:     #666666;
+  --cc-navy-800:          #000033;
+  --cc-navy-700:          #000052;
+}
+
+:root[data-font="legible"] {
+  --cc-font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
+}
+
 :root[data-motion="reduced"] *,
 :root[data-motion="reduced"] *::before,
 :root[data-motion="reduced"] *::after {
@@ -133,14 +117,31 @@
   transition: none !important;
 }
 
+/* ── Dark Mode ──────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --cc-bg-base:       #0b1220;
+  --cc-bg-panel:      #080e1a;
+  --cc-bg-card:       #0f1a2e;
+  --cc-bg-elevated:   #152240;
+  --cc-bg-input:      #0b1220;
+  --cc-bg-hover:      #1c2d52;
+  --cc-border-subtle: #1c2d52;
+  --cc-border:        #243558;
+  --cc-border-strong: #2e436a;
+  --cc-text-primary:  #eaecf0;
+  --cc-text-secondary:#c5c9d0;
+  --cc-text-muted:    #8892a4;
+  --cc-text-faint:    #636a76;
+  --cc-blue-glow:     rgba(43,125,233,0.18);
+  --cc-orange-glow:   rgba(224,112,24,0.15);
+  --cc-success-bg:    rgba(26,154,74,0.15);
+  --cc-warning-bg:    rgba(192,138,21,0.15);
+  --cc-error-bg:      rgba(212,48,48,0.15);
+}
+
 /* ============================================================
    BASE
    ============================================================ */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
 
 html {
   scroll-behavior: smooth;
