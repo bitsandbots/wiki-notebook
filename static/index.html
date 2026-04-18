@@ -135,12 +135,12 @@
 <script src="/static/app.js"></script>
 <script>
 (function () {
-  var html = document.documentElement;
+  const html = document.documentElement;
 
   // ── Dark mode ──
-  var toggle = document.getElementById('theme-toggle');
-  var moon = document.getElementById('theme-icon-moon');
-  var sun  = document.getElementById('theme-icon-sun');
+  const toggle = document.getElementById('theme-toggle');
+  const moon = document.getElementById('theme-icon-moon');
+  const sun  = document.getElementById('theme-icon-sun');
 
   function applyTheme(dark) {
     html.setAttribute('data-theme', dark ? 'dark' : 'light');
@@ -149,36 +149,34 @@
     if (toggle) toggle.setAttribute('aria-pressed', dark ? 'true' : 'false');
   }
 
-  var savedTheme = localStorage.getItem('wiki-note-theme');
-  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const savedTheme = localStorage.getItem('wiki-note-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   applyTheme(savedTheme ? savedTheme === 'dark' : prefersDark);
 
-  if (toggle) {
-    toggle.addEventListener('click', function () {
-      var isDark = html.getAttribute('data-theme') === 'dark';
-      applyTheme(!isDark);
-      localStorage.setItem('wiki-note-theme', !isDark ? 'dark' : 'light');
-    });
-  }
+  toggle?.addEventListener('click', function () {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    applyTheme(!isDark);
+    localStorage.setItem('wiki-note-theme', !isDark ? 'dark' : 'light');
+  });
 
   // ── Mobile sidebar ──
-  var sidebar = document.getElementById('sidebar');
-  var overlay = document.getElementById('sidebar-overlay');
-  var sidebarBtn = document.getElementById('sidebar-toggle');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const sidebarBtn = document.getElementById('sidebar-toggle');
 
   function openSidebar() {
-    if (sidebar) sidebar.classList.add('open');
-    if (overlay) overlay.classList.add('open');
+    sidebar?.classList.add('open');
+    overlay?.classList.add('open');
   }
   function closeSidebar() {
-    if (sidebar) sidebar.classList.remove('open');
-    if (overlay) overlay.classList.remove('open');
+    sidebar?.classList.remove('open');
+    overlay?.classList.remove('open');
   }
 
-  if (sidebarBtn) sidebarBtn.addEventListener('click', function () {
-    sidebar && sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  sidebarBtn?.addEventListener('click', function () {
+    sidebar?.classList.contains('open') ? closeSidebar() : openSidebar();
   });
-  if (overlay) overlay.addEventListener('click', closeSidebar);
+  overlay?.addEventListener('click', closeSidebar);
 })();
 </script>
 </body>
