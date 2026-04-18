@@ -126,37 +126,39 @@ function renderNotes(notes, isSearch = false) {
     const html = notes.map(note => {
         const category = note.category || 'uncategorized';
         const tagsHtml = note.tags?.length
-            ? `<div class="note-card-tags">${note.tags.map(t => `<span class="note-card-tag">${t}</span>`).join('')}</div>`
+            ? `<div class="note-card-tags" aria-label="Tags">${note.tags.map(t => `<span class="note-card-tag">${t}</span>`).join('')}</div>`
             : '';
         const titleHtml = note.title || 'Untitled';
         const snippet = note.snippet || note.body?.substring(0, 200) || '';
+        const formattedDate = formatDateTime(note.updated_at);
 
         const isSelected = state.selectedIds.has(note.id);
         const checkboxHtml = !isSearch
             ? `<label class="note-card-checkbox">
-                <input type="checkbox" checked="${isSelected}" data-note-id="${note.id}">
-                <span class="checkbox-icon"></span>
+                <input type="checkbox" checked="${isSelected}" data-note-id="${note.id}" aria-label="Select ${titleHtml}">
+                <span class="checkbox-icon" aria-hidden="true"></span>
             </label>`
             : '';
 
-        return `<article class="note-card ${isSelected ? 'selected' : ''}" data-id="${note.id}">
-            ${checkboxHtml}
-            <div class="note-card-header">
-                <div class="note-card-title">${titleHtml}</div>
-                ${!isSearch ? '' : ''}
-            </div>
-            <div class="note-card-meta">
-                <span class="note-card-category">${category}</span>
-                ${tagsHtml}
-                <span>${formatDateTime(note.updated_at)}</span>
-            </div>
-            <div class="note-card-body">
-                ${snippet || '<em>No content</em>'}
-            </div>
-            <div class="note-card-actions">
-                <button class="note-card-action" onclick="editNote(${note.id})">Edit</button>
-            </div>
-        </article>`;
+        return `<li class="note-card ${isSelected ? 'selected' : ''}" data-id="${note.id}" role="listitem">
+            <article>
+                ${checkboxHtml}
+                <div class="note-card-header">
+                    <div class="note-card-title" id="note-title-${note.id}">${titleHtml}</div>
+                </div>
+                <div class="note-card-meta">
+                    <span class="note-card-category" aria-label="Category">${category}</span>
+                    ${tagsHtml}
+                    <span aria-label="Last updated">${formattedDate}</span>
+                </div>
+                <div class="note-card-body">
+                    ${snippet || '<em>No content</em>'}
+                </div>
+                <div class="note-card-actions" role="group" aria-label="Actions">
+                    <button class="note-card-action" onclick="editNote(${note.id})" aria-label="Edit ${titleHtml}">Edit</button>
+                </div>
+            </article>
+        </li>`;
     }).join('');
 
     container.innerHTML = html;
@@ -354,13 +356,18 @@ function clearSelection() {
 
 function updateActionBar() {
     const actionBar = document.getElementById('action-bar');
-    const countEl = document.querySelector('.action-bar-count');
+    const countEl = document.getElementById('selection-count');
 
     if (!actionBar) return;
 
     if (state.selectedIds.size > 0) {
         actionBar.style.display = 'flex';
-        if (countEl) countEl.textContent = `${state.selectedIds.size} note${state.selectedIds.size !== 1 ? 's' : ''} selected`;
+        if (countEl) {
+            const plural = state.selectedIds.size !== 1 ? 's' : '';
+            countEl.textContent = `${state.selectedIds.size} note${plural} selected`;
+            countEl.setAttribute('aria-live', 'polite');
+            countEl.setAttribute('aria-atomic', 'true');
+        }
     } else {
         actionBar.style.display = 'none';
     }
