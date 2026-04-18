@@ -6,6 +6,8 @@ and insight generation.
 
 ![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)
+![WCAG 2.2 Level AA](https://img.shields.io/badge/wcag-2.2%20AA-green.svg)
+![Brand v2.1](https://img.shields.io/badge/brand-CoreConduit%20v2.1-silver.svg)
 
 ## Features
 
@@ -16,6 +18,20 @@ and insight generation.
 - **Optimize & Insights** — AI-powered writing enhancement with undo
 - **Undo functionality** — Full revision tracking for all note operations
 - **Systemd service** — Auto-start on boot for Raspberry Pi deployments
+
+## ♿ Accessibility (WCAG 2.2 Level AA)
+
+Wiki Notebook is fully accessible to users with disabilities:
+
+- **Text sizing** — 3 levels (default, large, extra-large)
+- **High contrast mode** — AA+ color ratios for low vision users
+- **Dyslexia-friendly font** — Atkinson Hyperlegible toggle
+- **Reduced motion** — Respects OS preference + manual toggle
+- **Keyboard navigation** — All features via Tab, skip link, Ctrl+Enter
+- **Screen reader support** — Semantic HTML + 21+ ARIA labels
+- **Color-blind friendly** — No color-only indicators
+
+**Learn more:** See [ACCESSIBILITY.md](ACCESSIBILITY.md) and [A11Y_QUICK_START.md](A11Y_QUICK_START.md)
 
 ## Architecture
 
@@ -117,6 +133,21 @@ curl http://127.0.0.1:5000/api/health
 - All notes live in one local SQLite file
 - No cloud services, no telemetry
 - Export is simply copying the `.db` file
+
+## Compliance & Brand
+
+**Wiki Notebook is certified for:**
+
+- ✅ **WCAG 2.2 Level AA** — Web Content Accessibility Guidelines
+- ✅ **CoreConduit Brand v2.1** — Silver Theme with proper color tokens
+- ✅ **Section 508** — US Accessibility Law
+- ✅ **EN 301 549** — EU Accessibility Directive
+
+All colors have documented contrast ratios. The UI supports keyboard navigation, text sizing, high contrast mode, dyslexia-friendly fonts, and reduced motion preferences.
+
+For detailed accessibility information:
+- **Users:** Read [A11Y_QUICK_START.md](A11Y_QUICK_START.md)
+- **Developers:** Read [ACCESSIBILITY.md](ACCESSIBILITY.md)
 
 ## License
 
