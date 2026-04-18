@@ -701,131 +701,70 @@ a:hover { color: var(--cc-blue-600); text-decoration-thickness: 3px; }
 .ai-status.done { color: var(--cc-success); background: var(--cc-success-bg); }
 .ai-status.error { color: var(--cc-error); background: var(--cc-error-bg); }
 
-/* ============================================================
-   ACTION BAR (multi-select)
-   ============================================================ */
+/* ── Action Bar (multi-select footer) ──────────────────────────────────── */
 .action-bar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: var(--navy-800);
-  color: var(--text-on-dark);
-  padding: 0.75rem 1rem;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
+  bottom: 0; left: 0; right: 0;
+  background: var(--cc-navy-800);
+  border-top: 1px solid var(--cc-navy-700);
+  padding: .75rem 1.25rem;
+  z-index: 50;
+  box-shadow: 0 -2px 12px rgba(0,0,0,.3);
 }
-
 .action-bar-content {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  display: flex; align-items: center; gap: .75rem;
+  max-width: 1200px;
   flex-wrap: wrap;
 }
-
 .action-bar-count {
-  font-weight: 600;
-  min-height: var(--min-target);
-  display: flex;
-  align-items: center;
+  font-family: var(--cc-font-mono);
+  font-size: .78rem;
+  color: var(--cc-text-on-dark);
+  margin-right: auto;
 }
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+/* ── Site Footer ─────────────────────────────────────────────────────────── */
+.site-footer {
+  border-top: 1px solid var(--cc-border-subtle);
+  padding: .875rem 2.25rem;
+  font-family: var(--cc-font-mono);
+  font-size: .72rem;
+  color: var(--cc-text-faint);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-logo { font-family: var(--cc-font-display); font-weight: 700; color: var(--cc-text-primary); }
+.footer-logo .accent { color: var(--cc-orange-500); }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  .sidebar {
-    width: 200px;
-    padding: 0.75rem;
-  }
-
-  .editor-container {
-    padding: 0.75rem;
-  }
-
-  .note-title {
-    font-size: 1.5rem;
-  }
+  :root { --sidebar-w: 190px; }
 }
 
-@media (max-width: 960px) {
-  .main {
-    flex-direction: column;
-  }
+@media (max-width: 700px) {
+  :root { --sidebar-w: 240px; }
+
+  .layout { grid-template-columns: 1fr; }
 
   .sidebar {
-    width: 100%;
-    padding: 0.5rem 1rem;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    max-height: 120px;
-    overflow-x: auto;
+    position: fixed;
+    top: var(--header-h);
+    left: 0; bottom: 0;
+    z-index: 90;
+    width: var(--sidebar-w);
+    transform: translateX(-100%);
+    transition: transform .22s ease;
+    border-right: 1px solid var(--cc-navy-700);
+    overflow-y: auto;
+    box-shadow: 4px 0 16px rgba(0,0,0,.3);
   }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-toggle { display: flex; }
 
-  .category-list {
-    display: flex;
-    gap: 0.5rem;
-    overflow-x: auto;
-    padding-bottom: 0.25rem;
-  }
-
-  .category-item {
-    white-space: nowrap;
-  }
-
-  .category-item .category-count {
-    display: none;
-  }
-
-  .category-item.active .category-count {
-    display: inline;
-  }
+  .page-content { padding: 1.25rem; }
+  .notes-list { grid-template-columns: 1fr; }
+  .editor-container { padding: 1rem; }
 }
 
-@media (max-width: 640px) {
-  .note-title {
-    font-size: 1.4rem;
-  }
-
-  .btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-  }
-
-  .note-card-title {
-    font-size: 1rem;
-  }
-
-  .note-card-body {
-    font-size: 0.9rem;
-  }
-
-  .editor-container {
-    padding: 0.5rem;
-  }
-
-  .notes-list-container {
-    padding: 0.5rem;
-  }
-}
-
-/* Scrollbar styling for better UX */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-base);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-strong);
+@media (max-width: 480px) {
+  .header-a11y-controls { display: none; }
 }
