@@ -3,126 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wiki Notebook</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Exo+2:wght@300;400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap">
+    <title>Wiki|Note</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <!-- Skip to main content link -->
-    <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <!-- Accessibility preferences toolbar -->
-    <div class="a11y-toolbar" aria-label="Accessibility preferences">
-        <div class="a11y-toolbar-content">
-            <span class="a11y-label">Accessibility:</span>
+<!-- Skip to main content (WCAG 2.4.1) -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
-            <!-- Text size control -->
-            <div class="a11y-control">
-                <label for="text-size-control">Text size:</label>
-                <select id="text-size-control" aria-label="Text size adjustment">
-                    <option value="default">Default</option>
-                    <option value="large">Large</option>
-                    <option value="xlarge">Extra Large</option>
-                </select>
-            </div>
+<!-- Header -->
+<header class="site-header" role="banner">
+    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle navigation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+    </button>
 
-            <!-- High contrast toggle -->
-            <div class="a11y-control">
-                <label for="contrast-toggle">
-                    <input type="checkbox" id="contrast-toggle" aria-label="High contrast mode">
-                    High Contrast
-                </label>
-            </div>
+    <a href="/" class="site-logo" aria-label="Wiki Notebook home">
+        <div class="logo-mark"><span class="cc-inner">WN</span></div>
+        <span>Wiki<span class="accent">Note</span></span>
+    </a>
 
-            <!-- Dyslexia-friendly font toggle -->
-            <div class="a11y-control">
-                <label for="font-toggle">
-                    <input type="checkbox" id="font-toggle" aria-label="Dyslexia-friendly font">
-                    Legible Font
-                </label>
-            </div>
-
-            <!-- Reduced motion toggle -->
-            <div class="a11y-control">
-                <label for="motion-toggle">
-                    <input type="checkbox" id="motion-toggle" aria-label="Reduce motion">
-                    Reduce Motion
-                </label>
-            </div>
-        </div>
+    <div class="header-search" role="search">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="search" id="search-input" placeholder="Search notes…" aria-label="Search notes" autocomplete="off">
     </div>
 
-    <div id="app">
-        <!-- Topbar -->
-        <header class="topbar" role="banner">
-            <h1 class="topbar-title">Wiki Notebook</h1>
-            <div class="topbar-search" role="search">
-                <input type="text" id="search-input" placeholder="Search notes…" aria-label="Search notes">
-                <span class="search-hint" aria-hidden="true">/ to search</span>
-            </div>
-        </header>
+    <div class="header-a11y-controls">
+        <!-- Dark mode toggle -->
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" aria-pressed="false">
+            <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+            <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+        </button>
+        <!-- High contrast toggle -->
+        <button class="a11y-toggle" id="btn-contrast" aria-label="Toggle high contrast" aria-pressed="false" title="High contrast">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="M12 2v20M2 12h20"/>
+            </svg>
+        </button>
+        <!-- Dyslexia-friendly font toggle -->
+        <button class="a11y-toggle" id="btn-font" aria-label="Toggle dyslexia-friendly font" aria-pressed="false" title="Legible font">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <text x="2" y="18" font-size="16" font-weight="bold">A</text>
+            </svg>
+        </button>
+    </div>
+</header>
 
-        <div class="main">
-            <!-- Sidebar / Categories -->
-            <aside class="sidebar" aria-label="Categories">
-                <h2 class="sidebar-title">Categories</h2>
-                <ul id="category-list" class="category-list" role="navigation" aria-label="Note categories">
-                    <li class="category-item active" data-category="">
-                        <span class="category-name">All</span>
-                        <span class="category-count" aria-live="polite">0</span>
-                    </li>
-                </ul>
-            </aside>
+<!-- Mobile sidebar overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-            <!-- Main content area -->
-            <main class="content" id="main-content">
-                <!-- Editor / Note view -->
-                <section id="editor-container" class="editor-container" aria-label="Note editor">
-                    <input type="text" id="note-title" class="note-title" placeholder="Note title…" aria-label="Note title">
-                    <textarea id="note-body" class="note-body" placeholder="Write your note here… (Markdown supported)" aria-label="Note body (Markdown supported)"></textarea>
-                    <div class="editor-actions" role="group" aria-label="Editor actions">
-                        <button type="button" id="preview-toggle" class="btn btn-secondary" aria-label="Toggle preview">Preview</button>
-                        <button type="button" id="save-btn" class="btn btn-primary" aria-label="Save note (Ctrl+Enter)">
-                            <span class="btn-text">Save</span>
-                            <span class="btn-spinner" style="display:none;" aria-hidden="true">Saving…</span>
-                        </button>
-                        <button type="button" id="delete-btn" class="btn btn-danger" style="display:none;" aria-label="Delete this note">Delete</button>
-                        <button type="button" id="undo-btn" class="btn btn-link" style="display:none;" aria-label="Undo last AI optimization">Undo</button>
-                    </div>
-                    <div class="editor-shortcut" aria-hidden="true">
-                        Ctrl+Enter to save
-                    </div>
-                </section>
+<!-- App layout -->
+<div class="layout">
 
-                <section id="notes-list-container" class="notes-list-container" aria-label="Notes list">
-                    <h2 class="section-title">Recent</h2>
-                    <ul id="notes-list" class="notes-list" role="list">
-                        <!-- Notes loaded here -->
-                    </ul>
-                    <div id="empty-state" class="empty-state" role="status" aria-live="polite">
-                        <p>No notes yet. Create your first note!</p>
-                    </div>
-                </section>
-            </main>
+    <!-- Sidebar / Categories -->
+    <aside class="sidebar" id="sidebar" aria-label="Categories">
+        <span class="sidebar-label">Categories</span>
+        <ul id="category-list" class="category-list" role="navigation" aria-label="Note categories">
+            <li class="category-item active" data-category="">
+                <span class="category-name">All</span>
+                <span class="category-count" aria-live="polite">0</span>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main" id="main-content">
+        <div class="page-content">
+
+            <!-- Editor / Note view -->
+            <section id="editor-container" class="editor-container" aria-label="Note editor">
+                <input type="text" id="note-title" class="note-title" placeholder="Note title…" aria-label="Note title">
+                <textarea id="note-body" class="note-body" placeholder="Write your note here… (Markdown supported)" aria-label="Note body (Markdown supported)"></textarea>
+                <div class="editor-actions" role="group" aria-label="Editor actions">
+                    <button type="button" id="preview-toggle" class="btn btn-secondary" aria-label="Toggle preview">Preview</button>
+                    <button type="button" id="save-btn" class="btn btn-primary" aria-label="Save note (Ctrl+Enter)">
+                        <span class="btn-text">Save</span>
+                        <span class="btn-spinner" style="display:none;" aria-hidden="true">Saving…</span>
+                    </button>
+                    <button type="button" id="delete-btn" class="btn btn-danger" style="display:none;" aria-label="Delete this note">Delete</button>
+                    <button type="button" id="undo-btn" class="btn btn-link" style="display:none;" aria-label="Undo last AI optimization">Undo</button>
+                </div>
+                <div class="editor-shortcut" aria-hidden="true">Ctrl+Enter to save</div>
+            </section>
+
+            <!-- Notes list -->
+            <section id="notes-list-container" class="notes-list-container" aria-label="Notes list">
+                <h2 class="section-title">Recent</h2>
+                <ul id="notes-list" class="notes-list" role="list"></ul>
+                <div id="empty-state" class="empty-state" role="status" aria-live="polite">
+                    <p>No notes yet. Create your first note!</p>
+                </div>
+            </section>
+
         </div>
 
-        <!-- Action bar (for multi-select) -->
-        <footer id="action-bar" class="action-bar" style="display:none;" aria-label="Multi-select actions">
-            <div class="action-bar-content">
-                <span class="action-bar-count" id="selection-count" aria-live="polite">0 notes selected</span>
-                <button type="button" class="btn btn-primary" id="combine-concat-btn" aria-label="Combine selected notes by concatenating">Combine (concatenate)</button>
-                <button type="button" class="btn btn-secondary" id="combine-ai-btn" disabled title="Ollama unavailable" aria-label="Combine selected notes using AI (Ollama)">Combine (AI)</button>
-                <button type="button" class="btn btn-link" id="clear-selection-btn" aria-label="Clear selection">Clear</button>
-            </div>
+        <footer class="site-footer">
+            <span class="footer-logo">Wiki<span class="accent">Note</span></span>
+            <span>Self-hosted · Offline-first</span>
         </footer>
-    </div>
+    </main>
 
-    <!-- Scripts -->
-    <script src="/static/vendor/marked.min.js"></script>
-    <script src="/static/vendor/dompurify.min.js"></script>
-    <script src="/static/a11y.js"></script>
-    <script src="/static/app.js"></script>
+</div><!-- .layout -->
+
+<!-- Action bar (multi-select) -->
+<footer id="action-bar" class="action-bar" style="display:none;" aria-label="Multi-select actions">
+    <div class="action-bar-content">
+        <span class="action-bar-count" id="selection-count" aria-live="polite">0 notes selected</span>
+        <button type="button" class="btn btn-primary" id="combine-concat-btn" aria-label="Combine selected notes by concatenating">Combine (concatenate)</button>
+        <button type="button" class="btn btn-secondary" id="combine-ai-btn" disabled title="Ollama unavailable" aria-label="Combine selected notes using AI (Ollama)">Combine (AI)</button>
+        <button type="button" class="btn btn-link" id="clear-selection-btn" aria-label="Clear selection">Clear</button>
+    </div>
+</footer>
+
+<!-- Scripts -->
+<script src="/static/vendor/marked.min.js"></script>
+<script src="/static/vendor/dompurify.min.js"></script>
+<script src="/static/a11y.js"></script>
+<script src="/static/app.js"></script>
 </body>
 </html>
