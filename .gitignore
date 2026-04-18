@@ -35,5 +35,8 @@ htmlcov/
 *.txt~
 2026-*-*-*.txt
 
+# Git worktrees
+worktrees/
+
 # Database (tracked intentionally — remove this line to stop tracking)
 # data/notebook.db
