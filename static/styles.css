@@ -458,6 +458,7 @@ a:hover { color: var(--cc-blue-600); text-decoration-thickness: 3px; }
   padding: .1rem .4rem;
   font-size: .68rem;
   font-weight: 500;
+  text-transform: capitalize;
 }
 .note-card-body {
   padding: 0 16px 10px;
