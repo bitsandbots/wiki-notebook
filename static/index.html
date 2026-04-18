@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="en" data-text-size="default" data-contrast="default" data-motion="default" data-font="default">
+<html lang="en" data-theme="light" data-contrast="default" data-motion="default" data-font="default">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wiki|Note</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <!-- Blocking theme detection — must run before CSS paints to prevent FOUC -->
+    <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('wiki-note-theme');
+        var dark = t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+    </script>
 </head>
 <body>
 
@@ -137,7 +149,7 @@
 (function () {
   const html = document.documentElement;
 
-  // ── Dark mode ──
+  // ── Dark mode (theme already set in <head> — sync icons and aria-pressed) ──
   const toggle = document.getElementById('theme-toggle');
   const moon = document.getElementById('theme-icon-moon');
   const sun  = document.getElementById('theme-icon-sun');
@@ -149,34 +161,80 @@
     if (toggle) toggle.setAttribute('aria-pressed', dark ? 'true' : 'false');
   }
 
-  const savedTheme = localStorage.getItem('wiki-note-theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  applyTheme(savedTheme ? savedTheme === 'dark' : prefersDark);
+  // Sync icons with data-theme already applied by the <head> script
+  applyTheme(html.getAttribute('data-theme') === 'dark');
 
-  toggle?.addEventListener('click', function () {
-    const isDark = html.getAttribute('data-theme') === 'dark';
-    applyTheme(!isDark);
-    localStorage.setItem('wiki-note-theme', !isDark ? 'dark' : 'light');
-  });
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      applyTheme(!isDark);
+      try {
+        localStorage.setItem('wiki-note-theme', !isDark ? 'dark' : 'light');
+      } catch (e) {
+        console.warn('[theme] Could not persist theme preference:', e.message);
+      }
+    });
+  } else {
+    console.error('[theme] #theme-toggle not found — dark mode toggle disabled');
+  }
 
   // ── Mobile sidebar ──
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
   const sidebarBtn = document.getElementById('sidebar-toggle');
 
-  function openSidebar() {
-    sidebar?.classList.add('open');
-    overlay?.classList.add('open');
-  }
-  function closeSidebar() {
-    sidebar?.classList.remove('open');
-    overlay?.classList.remove('open');
+  function getFocusable() {
+    return Array.from(sidebar.querySelectorAll(
+      'a, button, input, [tabindex]:not([tabindex="-1"])'
+    )).filter(function (el) { return !el.disabled; });
   }
 
-  sidebarBtn?.addEventListener('click', function () {
-    sidebar?.classList.contains('open') ? closeSidebar() : openSidebar();
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    sidebarBtn.setAttribute('aria-expanded', 'true');
+    const first = getFocusable()[0];
+    if (first) first.focus();
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    sidebarBtn.setAttribute('aria-expanded', 'false');
+    sidebarBtn.focus();  // restore focus to trigger
+  }
+
+  if (sidebarBtn) {
+    sidebarBtn.addEventListener('click', function () {
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+  }
+  if (overlay) {
+    overlay.addEventListener('click', closeSidebar);
+  }
+
+  // Escape closes the sidebar
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+      closeSidebar();
+    }
   });
-  overlay?.addEventListener('click', closeSidebar);
+
+  // Focus trap — only active when sidebar is open as a modal overlay (≤700px)
+  if (sidebar) {
+    sidebar.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab' || !sidebar.classList.contains('open')) return;
+      const focusable = getFocusable();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+  }
 })();
 </script>
 </body>

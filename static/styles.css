@@ -1,5 +1,5 @@
 /* Wiki Notebook — CoreConduit Brand System v2.1 Silver
-   Tokens mirror ~/docsync — keep in sync.
+   CoreConduit Brand Tokens — derived from docsync style system.
    Fonts: Exo 2 · Plus Jakarta Sans · IBM Plex Mono (self-hosted)
 */
 
@@ -35,8 +35,8 @@
   --cc-border-strong:     #969ba5;
   --cc-text-primary:      #1e232b;
   --cc-text-secondary:    #3a404a;
-  --cc-text-muted:        #636a76;
-  --cc-text-faint:        #7d8491;
+  --cc-text-muted:        #4d545f;  /* AA-compliant on --cc-bg-base */
+  --cc-text-faint:        #5d6470;  /* AA-compliant on --cc-bg-base */
   --cc-text-on-dark:      #eaecf0;
   --cc-text-on-accent:    #ffffff;
   --cc-blue-600:          #1b6ad4;
@@ -80,9 +80,6 @@
 }
 
 /* ── User Preference Modes ──────────────────────────────────────────────── */
-:root[data-text-size="large"]  { font-size: 112.5%; }
-:root[data-text-size="xlarge"] { font-size: 125%;   }
-
 :root[data-contrast="high"] {
   --cc-bg-base:           #ffffff;
   --cc-bg-card:           #f5f5f5;
@@ -107,7 +104,8 @@
 }
 
 :root[data-font="legible"] {
-  --cc-font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  /* Verdana: designed for screen legibility, wide letterforms, available on all platforms */
+  --cc-font-body: 'Verdana', 'Geneva', system-ui, sans-serif;
 }
 
 :root[data-motion="reduced"] *,
@@ -306,9 +304,6 @@ a:hover { color: var(--cc-blue-600); text-decoration-thickness: 3px; }
 }
 .sidebar-toggle svg { width: 16px; height: 16px; }
 
-/* ============================================================
-   LAYOUT
-   ============================================================ */
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .layout {
   display: grid;
@@ -342,7 +337,7 @@ a:hover { color: var(--cc-blue-600); text-decoration-thickness: 3px; }
   display: block;
 }
 
-/* category-item maps to docsync sidebar-link visual style */
+/* Nav item with left-border active indicator — CoreConduit sidebar pattern */
 .category-item {
   display: flex;
   align-items: center;
@@ -486,7 +481,8 @@ a:hover { color: var(--cc-blue-600); text-decoration-thickness: 3px; }
   font-size: .68rem;
   font-weight: 600;
   padding: .25rem .6rem;
-  min-height: 32px;
+  min-height: 36px;
+  min-width: 44px;
   border-radius: 4px;
   border: 1px solid var(--cc-border-subtle);
   background: var(--cc-bg-elevated);
@@ -761,5 +757,7 @@ a:hover { color: var(--cc-blue-600); text-decoration-thickness: 3px; }
 }
 
 @media (max-width: 480px) {
-  .header-a11y-controls { display: none; }
+  /* Hide logo wordmark to free header space — keep WN mark + all a11y controls */
+  .site-logo > span { display: none; }
+  .site-header { gap: 0.4rem; }
 }

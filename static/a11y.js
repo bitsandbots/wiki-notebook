@@ -10,13 +10,21 @@
   function loadPrefs() {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    } catch {
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        console.warn('[a11y] Stored preferences corrupted, resetting:', e.message);
+      }
+      // SecurityError (private browsing) falls through — savePrefs will also fail gracefully
       return {};
     }
   }
 
   function savePrefs(prefs) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+    } catch (e) {
+      console.warn('[a11y] Could not save accessibility preferences:', e.message);
+    }
   }
 
   function applyPrefs(prefs) {
@@ -46,6 +54,7 @@
     // Respect system reduced-motion if not explicitly set
     if (!('motion' in prefs) && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       prefs.motion = true;
+      savePrefs(prefs);  // persist so initial load is symmetric with the change handler
     }
     window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
       const p = loadPrefs();
@@ -58,21 +67,31 @@
 
     applyPrefs(prefs);
 
-    document.getElementById('btn-contrast')?.addEventListener('click', function () {
-      const p = loadPrefs();
-      p.contrast = !p.contrast;
-      savePrefs(p);
-      applyPrefs(p);
-      announceChange('High contrast mode ' + (p.contrast ? 'enabled' : 'disabled'));
-    });
+    const btnContrast = document.getElementById('btn-contrast');
+    if (!btnContrast) {
+      console.error('[a11y] #btn-contrast not found — high contrast toggle disabled');
+    } else {
+      btnContrast.addEventListener('click', function () {
+        const p = loadPrefs();
+        p.contrast = !p.contrast;
+        savePrefs(p);
+        applyPrefs(p);
+        announceChange('High contrast mode ' + (p.contrast ? 'enabled' : 'disabled'));
+      });
+    }
 
-    document.getElementById('btn-font')?.addEventListener('click', function () {
-      const p = loadPrefs();
-      p.font = !p.font;
-      savePrefs(p);
-      applyPrefs(p);
-      announceChange('Dyslexia-friendly font ' + (p.font ? 'enabled' : 'disabled'));
-    });
+    const btnFont = document.getElementById('btn-font');
+    if (!btnFont) {
+      console.error('[a11y] #btn-font not found — legible font toggle disabled');
+    } else {
+      btnFont.addEventListener('click', function () {
+        const p = loadPrefs();
+        p.font = !p.font;
+        savePrefs(p);
+        applyPrefs(p);
+        announceChange('Dyslexia-friendly font ' + (p.font ? 'enabled' : 'disabled'));
+      });
+    }
   }
 
   if (document.readyState === 'loading') {
