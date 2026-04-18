@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+.eggs/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# Editor / OS
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Runtime / session state
+.remember/tmp/
+.remember/logs/
+*.pid
+
+# Stray files
+*.txt~
+2026-*-*-*.txt
+
+# Database (tracked intentionally — remove this line to stop tracking)
+# data/notebook.db
