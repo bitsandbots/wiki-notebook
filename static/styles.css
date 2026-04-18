@@ -363,7 +363,7 @@ a:hover { color: var(--cc-blue-600); text-decoration-thickness: 3px; }
   background: var(--cc-blue-glow);
   font-weight: 600;
 }
-.category-name { font-size: .825rem; }
+.category-name { font-size: .825rem; text-transform: capitalize; }
 .category-count {
   font-family: var(--cc-font-mono);
   font-size: .65rem;
@@ -491,6 +491,18 @@ a:hover { color: var(--cc-blue-600); text-decoration-thickness: 3px; }
   transition: background .12s, color .12s;
 }
 .note-card-action:hover { background: var(--cc-blue-500); color: white; border-color: var(--cc-blue-500); }
+
+/* Reset markdown-generated elements inside card body preview */
+.note-card-body h1, .note-card-body h2, .note-card-body h3,
+.note-card-body h4, .note-card-body h5, .note-card-body h6 {
+  font-size: inherit;
+  font-weight: 600;
+  color: inherit;
+  line-height: 1.4;
+  margin: 0;
+}
+.note-card-body p { margin: 0; color: inherit; }
+.note-card-body ul, .note-card-body ol { margin: 0; padding-left: 1.2em; }
 
 .note-card-tags { padding: 0 16px 8px; display: flex; flex-wrap: wrap; gap: .25rem; }
 .note-card-tag {
