@@ -27,8 +27,7 @@ htmlcov/
 .vscode/
 
 # Runtime / session state
-.remember/tmp/
-.remember/logs/
+.remember/
 *.pid
 
 # Stray files
