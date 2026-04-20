@@ -33,7 +33,7 @@ jobs:
       - name: Verify package
         run: |
           ls -la dist/
-          python -m pip install --no-index --find-links=dist wiki-notebook
+          python -m pip install --find-links=dist wiki-notebook --no-deps
 
       - name: Upload to PyPI
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
