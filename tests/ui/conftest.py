@@ -7,6 +7,7 @@ import os
 import socket
 import signal
 import urllib.request
+from playwright.sync_api import Page
 
 # Track server process for cleanup
 _server_proc = None
@@ -125,7 +126,15 @@ def note_data():
 @pytest.fixture
 def app_page(page: Page, base_url: str) -> Page:
     """Create a page that has navigated to the app."""
+    # Set a desktop viewport
+    page.set_viewport_size({"width": 1280, "height": 800})
+
     page.goto(base_url)
-    # Wait for the app to fully load
-    page.wait_for_selector("#notes-list", timeout=10000)
+
+    # Wait for the page to load - check for editor container instead
+    page.wait_for_selector("#editor-container", timeout=10000)
+
+    # Wait a bit for JS to initialize
+    page.wait_for_timeout(500)
+
     return page
