@@ -325,9 +325,9 @@ class TestMultiSelect:
         """Selecting a note should show the action bar."""
         app_page.wait_for_selector(".note-card", timeout=5000)
 
-        # Click checkbox on first note (force to bypass visibility checks)
-        first_checkbox = app_page.locator(".note-card-checkbox input").first
-        first_checkbox.click(force=True)
+        # Click the checkbox wrapper (which triggers toggleSelection via event delegation)
+        first_checkbox_wrapper = app_page.locator(".note-card-checkbox").first
+        first_checkbox_wrapper.click()
         app_page.wait_for_timeout(500)
 
         # Action bar should appear
@@ -343,8 +343,8 @@ class TestMultiSelect:
         app_page.wait_for_selector(".note-card", timeout=5000)
 
         # Select a note first
-        first_checkbox = app_page.locator(".note-card-checkbox input").first
-        first_checkbox.click(force=True)
+        first_checkbox_wrapper = app_page.locator(".note-card-checkbox").first
+        first_checkbox_wrapper.click()
         app_page.wait_for_timeout(500)
 
         # Verify action bar is visible
