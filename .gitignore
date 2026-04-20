@@ -33,10 +33,13 @@ htmlcov/
 
 # Stray files
 *.txt~
-2026-*-*-*.txt
+2026-*.txt
 
 # Git worktrees
 worktrees/
+
+# Temporary files
+handoff.md
 
 # Database (user data, not tracked)
 data/notebook.db
