@@ -38,5 +38,5 @@ htmlcov/
 # Git worktrees
 worktrees/
 
-# Database (tracked intentionally — remove this line to stop tracking)
-# data/notebook.db
+# Database (user data, not tracked)
+data/notebook.db
