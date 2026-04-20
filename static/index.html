@@ -176,6 +176,7 @@
             class="editor-container"
             aria-label="Note editor"
           >
+            <!-- Title: shown as input in edit mode, as text in view mode -->
             <input
               type="text"
               id="note-title"
@@ -183,6 +184,12 @@
               placeholder="Note title…"
               aria-label="Note title"
             />
+            <div
+              id="note-title-display"
+              class="note-title-display"
+              style="display: none"
+              aria-label="Note title (view mode)"
+            ></div>
             <textarea
               id="note-body"
               class="note-body"
@@ -311,7 +318,7 @@
     <script src="/static/vendor/marked.min.js"></script>
     <script src="/static/vendor/dompurify.min.js"></script>
     <script src="/static/a11y.js"></script>
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js?v=20260420b"></script>
     <script>
       (function () {
         const html = document.documentElement;

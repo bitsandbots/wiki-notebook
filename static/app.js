@@ -78,6 +78,7 @@ const state = {
   categories: [],
   selectedIds: new Set(),
   editing: false,
+  isPreviewMode: false, // true = viewing rendered markdown, false = editing
 };
 
 // Debounce function
@@ -355,11 +356,109 @@ function editNote(id) {
       undoBtn.style.display = "inline-block";
     }
 
+    // Switch to edit mode
+    switchToEditMode();
+
     // Scroll to editor
     document
       .getElementById("editor-container")
       ?.scrollIntoView({ behavior: "smooth" });
   });
+}
+
+/**
+ * View a note in preview mode (rendered markdown)
+ * This is the default action when clicking a note card.
+ */
+function viewNote(id) {
+  console.log("viewNote called with id:", id);
+  api.get(id).then((note) => {
+    state.currentId = note.id;
+    state.category = note.category || null;
+
+    const titleEl = document.getElementById("note-title");
+    const bodyEl = document.getElementById("note-body");
+    const deleteBtn = document.getElementById("delete-btn");
+    const undoBtn = document.getElementById("undo-btn");
+
+    titleEl.value = note.title;
+    bodyEl.value = note.body;
+
+    if (deleteBtn) deleteBtn.style.display = "inline-block";
+    if (undoBtn && note.optimized_at) {
+      undoBtn.style.display = "inline-block";
+    }
+
+    // Switch to preview mode (rendered markdown)
+    console.log("Switching to preview mode for:", note.title);
+    switchToPreviewMode();
+
+    // Scroll to editor
+    document
+      .getElementById("editor-container")
+      ?.scrollIntoView({ behavior: "smooth" });
+  });
+}
+
+/**
+ * Switch to edit mode (show textarea, hide preview)
+ */
+function switchToEditMode() {
+  state.isPreviewMode = false;
+  const bodyEl = document.getElementById("note-body");
+  const previewContainer = document.getElementById("preview-container");
+  const previewToggle = document.getElementById("preview-toggle");
+  const titleEl = document.getElementById("note-title");
+  const titleDisplay = document.getElementById("note-title-display");
+
+  if (bodyEl) bodyEl.style.display = "";
+  if (previewContainer) previewContainer.style.display = "none";
+  if (previewToggle) previewToggle.textContent = "Preview";
+  // Show title input, hide title display
+  if (titleEl) {
+    titleEl.style.display = "";
+    titleEl.readOnly = false;
+  }
+  if (titleDisplay) titleDisplay.style.display = "none";
+}
+
+/**
+ * Switch to preview mode (show rendered markdown, hide textarea)
+ */
+function switchToPreviewMode() {
+  state.isPreviewMode = true;
+  const bodyEl = document.getElementById("note-body");
+  const titleEl = document.getElementById("note-title");
+  const titleDisplay = document.getElementById("note-title-display");
+  let previewContainer = document.getElementById("preview-container");
+  const previewToggle = document.getElementById("preview-toggle");
+
+  // Create preview container if it doesn't exist
+  if (!previewContainer) {
+    const container = document.createElement("div");
+    container.id = "preview-container";
+    container.className = "preview-container";
+    bodyEl.parentNode.insertBefore(container, bodyEl.nextSibling);
+    previewContainer = container;
+  }
+
+  // Render markdown - sanitized by DOMPurify to prevent XSS
+  const content = bodyEl?.value || "";
+  const html = marked.parse(content);
+  const sanitized = purify.sanitize(html);
+  previewContainer.innerHTML = sanitized;
+  previewContainer.style.display = "block";
+  if (bodyEl) bodyEl.style.display = "none";
+
+  // Update button text
+  if (previewToggle) previewToggle.textContent = "Edit";
+
+  // Show title as text, hide input
+  if (titleEl) titleEl.style.display = "none";
+  if (titleDisplay) {
+    titleDisplay.textContent = titleEl?.value || "Untitled";
+    titleDisplay.style.display = "";
+  }
 }
 
 function toggleSelection(noteId) {
@@ -426,6 +525,9 @@ function handleKeydown(e) {
       document.getElementById("note-title").value = "";
       document.getElementById("note-body").value = "";
       document.getElementById("delete-btn").style.display = "none";
+      document.getElementById("undo-btn").style.display = "none";
+      // Switch to edit mode for new note
+      switchToEditMode();
     }
   }
 }
@@ -451,6 +553,18 @@ function init() {
   document.addEventListener("click", (e) => {
     if (e.target.closest(".category-item")) {
       handleCategoryClick(e);
+    }
+    // Handle note card click (load note in preview mode)
+    const noteCard = e.target.closest(".note-card");
+    if (noteCard) {
+      // Exclude clicks on checkbox, Edit button, and their containers
+      const isCheckbox = e.target.closest(".note-card-checkbox");
+      const isEditButton = e.target.closest(".note-card-action");
+      const isCardActions = e.target.closest(".note-card-actions");
+      if (!isCheckbox && !isEditButton && !isCardActions) {
+        const noteId = parseInt(noteCard.dataset.id);
+        viewNote(noteId);
+      }
     }
     // Handle checkbox click
     const checkbox = e.target.closest(".note-card-checkbox input");
@@ -508,30 +622,15 @@ function init() {
     combineAiBtn.addEventListener("click", () => handleCombine("ai"));
   }
 
-  // Preview toggle
+  // Preview toggle - switches between edit and preview mode
   const previewToggle = document.getElementById("preview-toggle");
   if (previewToggle) {
     previewToggle.addEventListener("click", function () {
-      const bodyEl = document.getElementById("note-body");
-      let previewContainer = document.getElementById("preview-container");
-
-      if (!previewContainer) {
-        // Create preview container
-        const container = document.createElement("div");
-        container.id = "preview-container";
-        container.className = "preview-container";
-        bodyEl.parentNode.insertBefore(container, bodyEl.nextSibling);
-        previewContainer = container;
+      if (state.isPreviewMode) {
+        switchToEditMode();
+      } else {
+        switchToPreviewMode();
       }
-
-      const content = bodyEl?.value || "";
-      const html = marked.parse(content);
-      // Use DOMPurify for sanitization if available
-      const sanitized = purify.sanitize(html);
-      previewContainer.innerHTML = sanitized;
-      previewContainer.style.display = "block";
-      bodyEl.style.display = "none";
-      this.textContent = "Edit";
     });
   }
 
@@ -541,6 +640,7 @@ function init() {
 // Expose functions to window for onclick handlers
 window.renderApp = renderApp;
 window.editNote = editNote;
+window.viewNote = viewNote;
 window.api = api;
 window.state = state;
 
