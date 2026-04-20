@@ -9,6 +9,8 @@ jobs:
   release:
     name: Build and Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -25,15 +27,52 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install build twine
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Verify version matches tag
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          CODE_VERSION=$(python -c "from wiki_notebook import __version__; print(__version__)")
+          if [ "$TAG_VERSION" != "$CODE_VERSION" ]; then
+            echo "::error::Version mismatch: tag=v$TAG_VERSION code=$CODE_VERSION"
+            exit 1
+          fi
+          echo "Version check passed: $CODE_VERSION"
 
       - name: Build package
         run: |
+          rm -rf dist/ build/ *.egg-info wiki_notebook.egg-info
           python -m build
 
-      - name: Verify package
+      - name: Verify build artifacts
         run: |
+          if [ ! -d "dist" ] || [ -z "$(ls -A dist/)" ]; then
+            echo "::error::Build produced no artifacts in dist/"
+            exit 1
+          fi
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          if [ ! -f "dist/wiki_notebook-${VERSION}-py3-none-any.whl" ]; then
+            echo "::error::Expected wheel not found: wiki_notebook-${VERSION}-py3-none-any.whl"
+            exit 1
+          fi
           ls -la dist/
-          python -m pip install --find-links=dist wiki-notebook --no-deps
+
+      - name: Check package metadata
+        run: python -m twine check dist/wiki_notebook-*
+
+      - name: Validate PyPI credentials
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        run: |
+          if [ -z "${{ secrets.PYPI_API_TOKEN }}" ]; then
+            echo "::error::PYPI_API_TOKEN secret is not configured."
+            echo "::error::Go to Settings > Secrets and variables > Actions > New repository secret"
+            echo "::error::Name: PYPI_API_TOKEN, Value: <your-pypi-api-token>"
+            exit 1
+          fi
+          echo "PyPI credentials validated"
 
       - name: Upload to PyPI
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -45,7 +84,7 @@ jobs:
 
       - name: Create GitHub Release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.0.4
         with:
           files: dist/wiki_notebook-*
           body: |
@@ -69,6 +108,5 @@ jobs:
 
             ## Changes
             See [CHANGELOG.md](https://github.com/coreconduit/wiki-notebook/blob/main/CHANGELOG.md) for details.
-
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
