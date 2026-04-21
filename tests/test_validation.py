@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from wiki_notebook.validation import ValidationError, validate_create, validate_update
+from wiki_notebook.validation import (
+    ValidationError,
+    validate_category,
+    validate_create,
+    validate_tags,
+    validate_update,
+)
 
 
 class TestValidateCreate:
@@ -114,3 +120,55 @@ class TestValidateUpdate:
         """Should return empty dict when no valid fields provided."""
         result = validate_update({})
         assert result == {}
+
+
+class TestCategoryValidation:
+    """Tests for validate_category() and validate_tags()."""
+
+    def test_validate_category_valid(self):
+        """Should return lowercased category."""
+        result = validate_category("Research")
+        assert result == "research"
+
+    def test_validate_category_none(self):
+        """Should return None for None input."""
+        result = validate_category(None)
+        assert result is None
+
+    def test_validate_category_empty_string(self):
+        """Should return None for empty string."""
+        result = validate_category("")
+        assert result is None
+
+    def test_validate_category_too_long(self):
+        """Should raise ValidationError for category > 50 chars."""
+        long_category = "x" * 51
+        with pytest.raises(ValidationError) as exc:
+            validate_category(long_category)
+
+        assert "category must be 50 characters or less" in str(exc.value)
+
+    def test_validate_tags_valid(self):
+        """Should return lowercased, deduplicated tags."""
+        result = validate_tags(["Python", "python", "Testing"])
+        assert result == ["python", "testing"]
+
+    def test_validate_tags_none(self):
+        """Should return empty list for None input."""
+        result = validate_tags(None)
+        assert result == []
+
+    def test_validate_tags_not_list(self):
+        """Should raise ValidationError for non-list, non-string input."""
+        with pytest.raises(ValidationError) as exc:
+            validate_tags({"tag1": "value"})
+
+        assert "tags must be a list or comma-separated string" in str(exc.value)
+
+    def test_validate_tags_item_too_long(self):
+        """Should raise ValidationError for tag > 30 chars."""
+        long_tag = "x" * 31
+        with pytest.raises(ValidationError) as exc:
+            validate_tags([long_tag])
+
+        assert "30 characters" in str(exc.value)
