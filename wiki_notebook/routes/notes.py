@@ -361,9 +361,27 @@ def categorize_note_route(id: int) -> tuple:
         id: Note ID to categorize
 
     Returns:
-        Updated note with new category and tags (200) or error (404)
+        Updated note with new category and tags (200) or error (4xx/5xx)
     """
+    import logging
+
     from ..ai.categorize import categorize
+
+    logger = logging.getLogger(__name__)
+
+    # Validate note ID
+    if not isinstance(id, int) or id < 1:
+        return (
+            jsonify(
+                {
+                    "error": {
+                        "code": "invalid_input",
+                        "message": "invalid note ID",
+                    }
+                }
+            ),
+            400,
+        )
 
     conn = get_conn()
     try:
@@ -381,16 +399,45 @@ def categorize_note_route(id: int) -> tuple:
                 404,
             )
 
-        # Run categorization
-        result = categorize(note["title"], note["body"])
+        # Validate note has content
+        if not note.get("title") or not note.get("body"):
+            return (
+                jsonify(
+                    {
+                        "error": {
+                            "code": "invalid_state",
+                            "message": ("note must have title and body to categorize"),
+                        }
+                    }
+                ),
+                400,
+            )
 
-        # Update the note with new category and tags
-        update_payload = {
-            "category": result["category"],
-            "tags": result["tags"],
-        }
-        updated_note = update_note(conn, id, update_payload)
+        try:
+            # Run categorization
+            result = categorize(note["title"], note["body"])
 
-        return jsonify(updated_note), 200
+            # Update the note with new category and tags
+            update_payload = {
+                "category": result["category"],
+                "tags": result["tags"],
+            }
+            updated_note = update_note(conn, id, update_payload)
+
+            return jsonify(updated_note), 200
+        except Exception as e:
+            logger.exception(f"Categorization failed for note {id}")
+
+            return (
+                jsonify(
+                    {
+                        "error": {
+                            "code": "categorization_failed",
+                            "message": f"Failed to categorize note: {str(e)}",
+                        }
+                    }
+                ),
+                500,
+            )
     finally:
         conn.close()

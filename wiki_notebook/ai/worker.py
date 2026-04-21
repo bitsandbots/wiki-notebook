@@ -67,9 +67,13 @@ class EnrichmentWorker:
             pass
 
     def _run(self) -> None:
-        """Background worker loop."""
+        """Background worker loop with enhanced error handling."""
         from ..ai.categorize import categorize
         from ..ai.ollama_client import OllamaClient
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info("Enrichment worker started")
 
         while not self._shutdown:
             try:
@@ -77,31 +81,29 @@ class EnrichmentWorker:
             except queue.Empty:
                 continue
 
-            # Process the item - task_done() will be called once after completion
-            # The queue tracks how many items are being processed
             processed = False
+            conn = None
             try:
-                # Get note from database
-                conn = None
                 try:
-                    import sqlite3
                     from ..db import get_conn
 
                     conn = get_conn()
                     note = self.repository.get_note(conn, note_id)
+
                     if note is None:
+                        logger.debug(f"Note {note_id} not found, skipping")
+                        processed = True
                         continue
 
-                    # Create client for this operation
+                    logger.debug(f"Enriching note {note_id}: {note['title'][:50]}")
+
                     client = OllamaClient()
+                    result = categorize(note["title"], note["body"], client)
 
-                    # Categorize the note
-                    result = categorize(note.title, note.body, client)
+                    logger.debug(f"Categorized {note_id} as '{result['category']}'")
 
-                    # Update enrichment info
                     conn = get_conn()
                     try:
-                        # Update only category and tags, keep updated_at unchanged
                         self.repository.update_enrichment(
                             conn,
                             note_id,
@@ -110,17 +112,16 @@ class EnrichmentWorker:
                         )
                     finally:
                         conn.close()
-                finally:
-                    if conn:
-                        conn.close()
-                processed = True
-            except Exception:
-                # Log the error but continue processing
-                import logging
+                        conn = None
 
-                logger = logging.getLogger(__name__)
-                logger.exception("Enrichment failed for note %s", note_id)
+                    processed = True
+                    logger.info(f"Enrichment succeeded for note {note_id}")
+
+                except Exception as e:
+                    logger.exception(f"Enrichment failed for note {note_id}: {e}")
             finally:
+                if conn:
+                    conn.close()
                 if processed:
                     self.q.task_done()
 
