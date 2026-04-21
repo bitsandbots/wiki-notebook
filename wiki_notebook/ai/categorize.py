@@ -324,17 +324,40 @@ def _load_prompt(name: str) -> str:
         return f.read()
 
 
+def _sanitize(text: str) -> str:
+    """Sanitize prompt input to prevent injection attacks.
+
+    Escapes backslashes first, then quotes to prevent breaking out of strings.
+
+    Args:
+        text: Raw text to sanitize
+
+    Returns:
+        Sanitized text safe for string substitution
+    """
+    # Escape backslashes first (before other escaping)
+    text = text.replace("\\", "\\\\")
+    # Escape quotes to prevent breaking out of string context
+    text = text.replace('"', '\\"')
+    return text
+
+
 def _format_prompt(template: str, title: str, body: str) -> str:
     """Format a prompt template using %s placeholders.
 
     This avoids issues with { } being used in JSON in the template.
+    Inputs are sanitized to prevent injection attacks.
     """
     import re
+
+    # Sanitize inputs before substitution
+    safe_title = _sanitize(title[:200])
+    safe_body = _sanitize(body[:4000])
 
     # Replace {title} and {body} with %s for safe formatting
     template = template.replace("{title}", "%s")
     template = template.replace("{body}", "%s")
-    return template % (title[:200], body[:4000])
+    return template % (safe_title, safe_body)
 
 
 def _keyword_fallback(title: str, body: str) -> dict[str, Any]:

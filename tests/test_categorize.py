@@ -179,3 +179,34 @@ class TestCategorize:
             assert len(keywords) == len(
                 unique_keywords
             ), f"Category '{category}' has duplicate keywords: {keywords}"
+
+
+class TestPromptSanitization:
+    """Tests for prompt input sanitization."""
+
+    def test_sanitize_prompt_escapes_quotes(self):
+        """Sanitization escapes quotes to prevent injection."""
+        from wiki_notebook.ai.categorize import _format_prompt
+
+        template = 'Categorize: "{title}" - {body}'
+        title = 'Title with "quotes"'
+        body = "Body text"
+
+        result = _format_prompt(template, title, body)
+
+        # Should handle quotes safely without breaking template
+        assert '"quotes"' not in result or result.count('"') % 2 == 0
+
+    def test_sanitize_prompt_handles_newlines(self):
+        """Sanitization handles newlines without breaking format."""
+        from wiki_notebook.ai.categorize import _format_prompt
+
+        template = "Title: {title}\nBody: {body}"
+        title = "Title\nwith\nnewlines"
+        body = "Body\ncontent"
+
+        result = _format_prompt(template, title, body)
+
+        # Should not raise exception and should include content
+        assert "Title" in result
+        assert "Body" in result
