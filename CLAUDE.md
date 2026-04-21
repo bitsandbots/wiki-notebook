@@ -180,6 +180,32 @@ python -m wiki_notebook
 3. Build the package and verify `dist/` contains `.whl` and `.tar.gz`
 4. Push tags: `git push origin main && git push origin v0.2.0`
 
+## Self-Hosted Deployment
+
+For production deployment on self-hosted Linux systems, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for:
+- **System requirements** and prerequisite setup
+- **Automated installation** with systemd service
+- **Manual installation** with step-by-step instructions
+- **Configuration** with environment variables and custom categories
+- **Ollama integration** for AI-powered categorization
+- **Security hardening** with firewall and HTTPS/SSL setup
+- **Maintenance** including backups, updates, and monitoring
+- **Troubleshooting** for common issues
+
+Quick start for systemd deployment:
+```bash
+# Copy service file to systemd
+sudo cp .github/wiki-notebook.service /etc/systemd/system/
+
+# Enable and start service
+sudo systemctl daemon-reload
+sudo systemctl enable wiki-notebook
+sudo systemctl start wiki-notebook
+
+# View logs
+sudo journalctl -u wiki-notebook -f
+```
+
 ## Debugging
 
 - Enable debug mode: `FLASK_DEBUG=1 python -m wiki_notebook`
