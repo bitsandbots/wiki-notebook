@@ -2,26 +2,28 @@
 
 from __future__ import annotations
 
+import sqlite3
 import time
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from wiki_notebook.ai.worker import EnrichmentWorker
+from wiki_notebook import config
 from wiki_notebook.ai.ollama_client import OllamaClient, OllamaError
+from wiki_notebook.ai.worker import EnrichmentWorker
 from wiki_notebook.db import get_conn
 from wiki_notebook.repository import (
     create_note,
     get_note,
     update_enrichment,
 )
-from wiki_notebook import config
 
 
 class MockRepo:
     """Mock repository with get_note and update_enrichment methods."""
 
-    def get_note(self, conn, note_id):
+    def get_note(self, conn: sqlite3.Connection, note_id: int) -> dict[str, Any] | None:
         """Get a note from the database."""
         from wiki_notebook.models import Note
 
@@ -41,7 +43,9 @@ class MockRepo:
             source_ids=note_dict.get("source_ids"),
         )
 
-    def update_enrichment(self, conn, note_id, category, tags):
+    def update_enrichment(
+        self, conn: sqlite3.Connection, note_id: int, category: str, tags: list[str]
+    ) -> dict[str, Any]:
         """Update enrichment info for a note."""
         return update_enrichment(conn, note_id, category, tags)
 
