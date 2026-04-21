@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..config_categories import load_category_keywords
 from .ollama_client import OllamaClient, OllamaError
 
 # Common English stopwords for keyword fallback
@@ -194,122 +195,21 @@ STOPWORDS = {
     "very",
 }
 
-# Category keywords mapping for fallback heuristic
-# Using sets during construction to automatically deduplicate, then convert to sorted lists
-_KEYWORDS_SETS: dict[str, set[str]] = {
-    "meetings": {
-        "meeting",
-        "agenda",
-        "attendees",
-        "discussion",
-        "talk",
-        "call",
-        "zoom",
-        "teams",
-        "conference",
-        "presentation",
-        "seminar",
-        "workshop",
-        "panel",
-        "roundtable",
-        "briefing",
-        "sync",
-        "standup",
-    },
-    "project ideas": {
-        "project",
-        "idea",
-        "feature",
-        "concept",
-        "plan",
-        "proposal",
-        "vision",
-        "prototype",
-        "sprint",
-        "MVP",
-        "scope",
-        "requirements",
-        "spec",
-        "specification",
-        "design",
-        "wireframe",
-        "mockup",
-    },
-    "journal": {
-        "journal",
-        "entry",
-        "thought",
-        "feeling",
-        "reflection",
-        "daily",
-        "note",
-        "mood",
-        "emotional",
-        "personal",
-        "mindset",
-        "growth",
-        "gratitude",
-        "improvement",
-        "progress",
-        "review",
-        "retrospective",
-    },
-    "recipes": {
-        "recipe",
-        "cook",
-        "bake",
-        "meal",
-        "food",
-        "dish",
-        "ingredient",
-        "meal prep",
-        "diet",
-        "nutritional",
-        "healthy",
-        "vegetarian",
-        "vegan",
-        "gluten-free",
-        "cooking",
-        "chef",
-    },
-    "notes": {
-        "note",
-        "remind",
-        "todo",
-        "task",
-        "item",
-        "point",
-        "idea",
-        "thought",
-        "observation",
-        "insight",
-        "takeaway",
-        "key point",
-    },
-    "learning": {
-        "learn",
-        "study",
-        "course",
-        "tutorial",
-        "guide",
-        "lesson",
-        "module",
-        "chapter",
-        "concept",
-        "theory",
-        "knowledge",
-        "skill",
-        "practice",
-        "exercise",
-        "homework",
-        "exam",
-    },
-}
 
-# Convert sets to sorted lists for consistency
-CATEGORY_KEYWORDS: dict[str, list[str]] = {
-    category: sorted(list(keywords)) for category, keywords in _KEYWORDS_SETS.items()
-}
+# Category keywords mapping loaded from config
+# Uses config_categories module to support custom categories via env vars
+def _get_category_keywords() -> dict[str, list[str]]:
+    """Get category keywords from configuration."""
+    return load_category_keywords()
+
+
+def get_category_keywords() -> dict[str, list[str]]:
+    """Public accessor for category keywords.
+
+    Returns:
+        Dictionary mapping category names to lists of keywords
+    """
+    return _get_category_keywords()
 
 
 def _load_prompt(name: str) -> str:
@@ -392,7 +292,8 @@ def _keyword_fallback(title: str, body: str) -> dict[str, Any]:
     best_category = "uncategorized"
     best_score = 0
 
-    for category, keywords in CATEGORY_KEYWORDS.items():
+    category_keywords = get_category_keywords()
+    for category, keywords in category_keywords.items():
         score = sum(
             word_counts.get(keyword, 0)
             for keyword in keywords

@@ -170,10 +170,11 @@ class TestCategorize:
         # Verify prompt truncation happened (no exception)
 
     def test_category_keywords_no_duplicates(self):
-        """CATEGORY_KEYWORDS should not contain duplicate values."""
-        from wiki_notebook.ai.categorize import CATEGORY_KEYWORDS
+        """Category keywords should not contain duplicate values."""
+        from wiki_notebook.ai.categorize import get_category_keywords
 
-        for category, keywords in CATEGORY_KEYWORDS.items():
+        category_keywords = get_category_keywords()
+        for category, keywords in category_keywords.items():
             # Check for duplicates within each category's keyword list
             unique_keywords = set(keywords)
             assert len(keywords) == len(
