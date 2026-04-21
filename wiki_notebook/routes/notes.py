@@ -17,7 +17,13 @@ from ..repository import (
     undo_optimize,
     update_note,
 )
-from ..validation import ValidationError, validate_create, validate_update
+from ..validation import (
+    ValidationError,
+    validate_category,
+    validate_create,
+    validate_tags,
+    validate_update,
+)
 
 notes_bp = Blueprint("notes", __name__, url_prefix="/api/notes")
 
@@ -417,10 +423,28 @@ def categorize_note_route(id: int) -> tuple:
             # Run categorization
             result = categorize(note["title"], note["body"])
 
+            # Validate result before updating
+            try:
+                validated_category = validate_category(result["category"])
+                validated_tags = validate_tags(result["tags"])
+            except ValidationError as e:
+                logger.warning(f"Categorization result validation failed: {e}")
+                return (
+                    jsonify(
+                        {
+                            "error": {
+                                "code": "invalid_input",
+                                "message": f"Invalid categorization result: {str(e)}",
+                            }
+                        }
+                    ),
+                    400,
+                )
+
             # Update the note with new category and tags
             update_payload = {
-                "category": result["category"],
-                "tags": result["tags"],
+                "category": validated_category,
+                "tags": validated_tags,
             }
             updated_note = update_note(conn, id, update_payload)
 

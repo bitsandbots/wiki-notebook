@@ -235,6 +235,35 @@ class TestNotesCategorize:
         # Ensure exception message is NOT in response
         assert "connection refused" not in data["error"]["message"]
 
+    def test_categorize_validates_result(self, client, monkeypatch):
+        """Route validates categorization result before updating DB."""
+        # Create a note
+        resp = client.post(
+            "/api/notes",
+            json={"title": "Test", "body": "Test body"},
+        )
+        note_id = resp.get_json()["id"]
+
+        # Mock categorize to return invalid category (>50 chars)
+        def mock_categorize(title: str, body: str) -> dict:
+            return {
+                "category": "a" * 51,  # Invalid: >50 chars
+                "tags": ["tag1"],
+            }
+
+        from wiki_notebook.ai import categorize as cat_module
+
+        monkeypatch.setattr(cat_module, "categorize", mock_categorize)
+
+        # Trigger categorization
+        resp = client.post(f"/api/notes/{note_id}/categorize")
+
+        # Should reject invalid category
+        assert resp.status_code == 400
+        data = resp.get_json()
+        assert data["error"]["code"] == "invalid_input"
+        assert "category" in data["error"]["message"].lower()
+
 
 class TestFTS5Sync:
     """Tests for FTS5 trigger synchronization."""
