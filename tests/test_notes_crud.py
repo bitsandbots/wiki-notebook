@@ -207,6 +207,34 @@ class TestNotesCategorize:
         assert resp.status_code == 404
         assert "not found" in resp.get_json()["error"]["message"]
 
+    def test_categorize_error_response_format(self, client, monkeypatch):
+        """500 error response uses generic message, not exception details."""
+        # Create a note
+        resp = client.post(
+            "/api/notes",
+            json={"title": "Test", "body": "Test body"},
+        )
+        note_id = resp.get_json()["id"]
+
+        # Mock categorization to raise exception
+        def mock_categorize_error(*args, **kwargs):
+            raise RuntimeError("Internal Ollama error: connection refused")
+
+        from wiki_notebook.ai import categorize as cat_module
+
+        monkeypatch.setattr(cat_module, "categorize", mock_categorize_error)
+
+        # Trigger categorization
+        resp = client.post(f"/api/notes/{note_id}/categorize")
+
+        # Verify response structure and generic message (no exception details)
+        assert resp.status_code == 500
+        data = resp.get_json()
+        assert data["error"]["code"] == "categorization_failed"
+        assert data["error"]["message"] == "Failed to categorize note"
+        # Ensure exception message is NOT in response
+        assert "connection refused" not in data["error"]["message"]
+
 
 class TestFTS5Sync:
     """Tests for FTS5 trigger synchronization."""

@@ -433,7 +433,7 @@ def categorize_note_route(id: int) -> tuple:
                     {
                         "error": {
                             "code": "categorization_failed",
-                            "message": f"Failed to categorize note: {str(e)}",
+                            "message": "Failed to categorize note",
                         }
                     }
                 ),
