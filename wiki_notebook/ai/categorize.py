@@ -195,9 +195,9 @@ STOPWORDS = {
 }
 
 # Category keywords mapping for fallback heuristic
-CATEGORY_KEYWORDS: dict[str, list[str]] = {
-    "meetings": [
-        "meeting",
+# Using sets during construction to automatically deduplicate, then convert to sorted lists
+_KEYWORDS_SETS: dict[str, set[str]] = {
+    "meetings": {
         "meeting",
         "agenda",
         "attendees",
@@ -208,15 +208,15 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "teams",
         "conference",
         "presentation",
-        " seminar",
+        "seminar",
         "workshop",
         "panel",
         "roundtable",
         "briefing",
         "sync",
         "standup",
-    ],
-    "project ideas": [
+    },
+    "project ideas": {
         "project",
         "idea",
         "feature",
@@ -226,8 +226,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "vision",
         "prototype",
         "sprint",
-        " MVP",
-        " MVP",
+        "MVP",
         "scope",
         "requirements",
         "spec",
@@ -235,8 +234,8 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "design",
         "wireframe",
         "mockup",
-    ],
-    "journal": [
+    },
+    "journal": {
         "journal",
         "entry",
         "thought",
@@ -254,8 +253,8 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "progress",
         "review",
         "retrospective",
-    ],
-    "recipes": [
+    },
+    "recipes": {
         "recipe",
         "cook",
         "bake",
@@ -263,7 +262,6 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "food",
         "dish",
         "ingredient",
-        "recipe",
         "meal prep",
         "diet",
         "nutritional",
@@ -271,12 +269,10 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "vegetarian",
         "vegan",
         "gluten-free",
-        "recipe",
         "cooking",
-        "recipe",
         "chef",
-    ],
-    "notes": [
+    },
+    "notes": {
         "note",
         "remind",
         "todo",
@@ -289,16 +285,13 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "insight",
         "takeaway",
         "key point",
-    ],
-    "learning": [
+    },
+    "learning": {
         "learn",
         "study",
-        "learn",
         "course",
         "tutorial",
         "guide",
-        "guide",
-        "lesson",
         "lesson",
         "module",
         "chapter",
@@ -310,7 +303,12 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
         "exercise",
         "homework",
         "exam",
-    ],
+    },
+}
+
+# Convert sets to sorted lists for consistency
+CATEGORY_KEYWORDS: dict[str, list[str]] = {
+    category: sorted(list(keywords)) for category, keywords in _KEYWORDS_SETS.items()
 }
 
 
