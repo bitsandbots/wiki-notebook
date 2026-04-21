@@ -53,7 +53,8 @@ class MockRepo:
 class TestEnrichmentWorker:
     """Tests for EnrichmentWorker background processing."""
 
-    def test_worker_processes_enqueued_notes(self, app):
+    @patch("wiki_notebook.ai.categorize.OllamaClient")
+    def test_worker_processes_enqueued_notes(self, mock_ollama_class, app):
         """Verifies worker processes enqueued notes with categorization.
 
         Tests that:
@@ -62,6 +63,11 @@ class TestEnrichmentWorker:
         - Worker updates note with category and tags
         - Worker completes without blocking
         """
+        # Mock OllamaClient to avoid network calls
+        mock_client = MagicMock(spec=OllamaClient)
+        mock_client.is_available.return_value = False  # Force keyword fallback
+        mock_ollama_class.return_value = mock_client
+
         # Setup test note
         conn = get_conn()
         try:
@@ -104,7 +110,8 @@ class TestEnrichmentWorker:
         finally:
             conn.close()
 
-    def test_worker_handles_ollama_error(self, app):
+    @patch("wiki_notebook.ai.ollama_client.OllamaClient")
+    def test_worker_handles_ollama_error(self, mock_ollama_class, app):
         """Verifies worker falls back to keyword categorization on error.
 
         Tests that:
@@ -113,6 +120,12 @@ class TestEnrichmentWorker:
         - Note is still updated with fallback category
         - Worker continues processing without crashing
         """
+        # Mock OllamaClient to raise error
+        mock_client = MagicMock(spec=OllamaClient)
+        mock_client.is_available.return_value = True
+        mock_client.generate_json.side_effect = OllamaError("Ollama error")
+        mock_ollama_class.return_value = mock_client
+
         # Setup test note with meeting keywords
         conn = get_conn()
         try:
@@ -131,22 +144,15 @@ class TestEnrichmentWorker:
 
         worker = EnrichmentWorker(config.config, MockRepo())
 
-        # Mock OllamaClient to raise error
-        with patch("wiki_notebook.ai.categorize.OllamaClient") as mock_ollama_class:
-            mock_client = MagicMock(spec=OllamaClient)
-            mock_client.is_available.return_value = True
-            mock_client.generate_json.side_effect = OllamaError("Ollama error")
-            mock_ollama_class.return_value = mock_client
+        # Start worker, enqueue note, wait for processing
+        worker.start()
+        worker.enqueue(note_id)
 
-            # Start worker, enqueue note, wait for processing
-            worker.start()
-            worker.enqueue(note_id)
+        # Wait for queue to be processed
+        worker.q.join()
 
-            # Wait for queue to be processed
-            worker.q.join()
-
-            # Stop worker
-            worker.stop()
+        # Stop worker
+        worker.stop()
 
         # Verify note was updated with fallback category (meetings)
         # because the title/body contain meeting keywords
@@ -179,7 +185,8 @@ class TestEnrichmentWorker:
         # Verify queue is indeed full
         assert worker.q.qsize() == 1000
 
-    def test_worker_handles_exception_gracefully(self, app):
+    @patch("wiki_notebook.ai.ollama_client.OllamaClient")
+    def test_worker_handles_exception_gracefully(self, mock_ollama_class, app):
         """Verifies worker catches exceptions and continues processing.
 
         Tests that:
@@ -187,6 +194,11 @@ class TestEnrichmentWorker:
         - Multiple notes are processed even if one fails
         - Worker gracefully recovers from exceptions
         """
+        # Mock OllamaClient to avoid network calls
+        mock_client = MagicMock(spec=OllamaClient)
+        mock_client.is_available.return_value = False  # Force keyword fallback
+        mock_ollama_class.return_value = mock_client
+
         # Create two notes
         conn = get_conn()
         try:

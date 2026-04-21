@@ -81,7 +81,6 @@ class EnrichmentWorker:
             except queue.Empty:
                 continue
 
-            processed = False
             conn = None
             try:
                 try:
@@ -92,13 +91,12 @@ class EnrichmentWorker:
 
                     if note is None:
                         logger.debug(f"Note {note_id} not found, skipping")
-                        processed = True
                         continue
 
-                    logger.debug(f"Enriching note {note_id}: {note['title'][:50]}")
+                    logger.debug(f"Enriching note {note_id}: {note.title[:50]}")
 
                     client = OllamaClient()
-                    result = categorize(note["title"], note["body"], client)
+                    result = categorize(note.title, note.body, client)
 
                     logger.debug(f"Categorized {note_id} as '{result['category']}'")
 
@@ -114,7 +112,6 @@ class EnrichmentWorker:
                         conn.close()
                         conn = None
 
-                    processed = True
                     logger.info(f"Enrichment succeeded for note {note_id}")
 
                 except Exception as e:
@@ -122,8 +119,8 @@ class EnrichmentWorker:
             finally:
                 if conn:
                     conn.close()
-                if processed:
-                    self.q.task_done()
+                # Always mark task as done, even if it failed
+                self.q.task_done()
 
 
 # Helper to create enrichment info update function
