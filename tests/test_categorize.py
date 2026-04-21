@@ -181,6 +181,41 @@ class TestCategorize:
                 unique_keywords
             ), f"Category '{category}' has duplicate keywords: {keywords}"
 
+    def test_categorize_returns_confidence(self):
+        """Categorize returns confidence score (0-100)."""
+        client = MagicMock(spec=OllamaClient)
+        client.is_available.return_value = True
+        client.generate_json.return_value = {
+            "category": "meetings",
+            "tags": ["q1", "planning"],
+        }
+
+        result = categorize("Test", "Content", client)
+
+        assert "confidence" in result
+        assert isinstance(result["confidence"], int)
+        assert 0 <= result["confidence"] <= 100
+
+    def test_categorize_returns_suggestions(self):
+        """Categorize returns category suggestions (alternative categories)."""
+        client = MagicMock(spec=OllamaClient)
+        client.is_available.return_value = True
+        client.generate_json.return_value = {
+            "category": "meetings",
+            "tags": ["q1", "planning"],
+        }
+
+        result = categorize("Test", "Content", client)
+
+        assert "suggestions" in result
+        assert isinstance(result["suggestions"], list)
+        # Should return top 3 alternatives
+        assert len(result["suggestions"]) <= 3
+        # Each suggestion should have category and confidence
+        for sugg in result["suggestions"]:
+            assert "category" in sugg
+            assert "confidence" in sugg
+
 
 class TestPromptSanitization:
     """Tests for prompt input sanitization."""

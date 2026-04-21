@@ -448,7 +448,12 @@ def categorize_note_route(id: int) -> tuple:
             }
             updated_note = update_note(conn, id, update_payload)
 
-            return jsonify(updated_note), 200
+            # Enrich response with confidence and suggestions
+            response_data = dict(updated_note)
+            response_data["confidence"] = result.get("confidence", 0)
+            response_data["suggestions"] = result.get("suggestions", [])
+
+            return jsonify(response_data), 200
         except Exception as e:
             logger.exception(f"Categorization failed for note {id}")
 

@@ -260,15 +260,18 @@ def _format_prompt(template: str, title: str, body: str) -> str:
     return template % (safe_title, safe_body)
 
 
-def _keyword_fallback(title: str, body: str) -> dict[str, Any]:
-    """Fallback categorization using keyword heuristic.
+def _categorize_by_keywords(
+    title: str, body: str
+) -> tuple[str, int, list[dict[str, Any]]]:
+    """Categorize by keywords and return category, confidence, and suggestions.
 
     Args:
         title: Note title
         body: Note body content
 
     Returns:
-        Dict with category and tags keys
+        Tuple of (category, confidence, suggestions) where suggestions is a list
+        of dicts with 'category' and 'confidence' keys
     """
     import re
 
@@ -281,35 +284,90 @@ def _keyword_fallback(title: str, body: str) -> dict[str, Any]:
     content_words = [w for w in words if w not in STOPWORDS and len(w) > 2]
 
     if not content_words:
-        return {"category": "uncategorized", "tags": []}
+        return "uncategorized", 0, []
 
     # Count word frequencies
     word_counts: dict[str, int] = {}
     for word in content_words:
         word_counts[word] = word_counts.get(word, 0) + 1
 
-    # Find best category based on keyword matching
-    best_category = "uncategorized"
-    best_score = 0
-
+    # Score all categories
     category_keywords = get_category_keywords()
+    scores: dict[str, int] = {}
+
     for category, keywords in category_keywords.items():
         score = sum(
             word_counts.get(keyword, 0)
             for keyword in keywords
             if keyword in word_counts
         )
-        if score > best_score:
-            best_score = score
-            best_category = category
+        scores[category] = score
 
-    # If we have a positive score, use the category; otherwise default
-    if best_score > 0:
-        category = best_category
-    else:
-        category = "uncategorized"
+    # Find best category
+    best_category = max(scores, key=scores.get) if scores else "uncategorized"
+    best_score = scores.get(best_category, 0)
+
+    # Calculate confidence: scale score to 0-100
+    confidence = min(100, int(best_score * 15)) if best_score > 0 else 0
+
+    # Get top 3 alternatives (excluding best category)
+    sorted_by_score = sorted(
+        [(cat, score) for cat, score in scores.items() if cat != best_category],
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    suggestions = [
+        {"category": cat, "confidence": min(100, int(score * 15))}
+        for cat, score in sorted_by_score[:3]
+        if score > 0
+    ]
+
+    return best_category, confidence, suggestions
+
+
+def _get_category_suggestions(
+    title: str, body: str, exclude_category: str
+) -> list[dict[str, Any]]:
+    """Get alternative category suggestions for a note.
+
+    Args:
+        title: Note title
+        body: Note body content
+        exclude_category: Category to exclude from suggestions (the main category)
+
+    Returns:
+        List of dicts with 'category' and 'confidence' keys
+    """
+    _, _, suggestions = _categorize_by_keywords(title, body)
+    # Filter out the exclude_category if it somehow appears
+    return [s for s in suggestions if s["category"] != exclude_category]
+
+
+def _keyword_fallback(title: str, body: str) -> dict[str, Any]:
+    """Fallback categorization using keyword heuristic.
+
+    Args:
+        title: Note title
+        body: Note body content
+
+    Returns:
+        Dict with category, tags, confidence, and suggestions keys
+    """
+    import re
+
+    # Get category and confidence from keyword categorization
+    category, confidence, suggestions = _categorize_by_keywords(title, body)
 
     # Get top 3-5 words as tags
+    text = f"{title} {body}".lower()
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    words = text.split()
+    content_words = [w for w in words if w not in STOPWORDS and len(w) > 2]
+
+    word_counts: dict[str, int] = {}
+    for word in content_words:
+        word_counts[word] = word_counts.get(word, 0) + 1
+
     sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
     tags = [word for word, count in sorted_words[:5] if word not in STOPWORDS]
 
@@ -317,7 +375,12 @@ def _keyword_fallback(title: str, body: str) -> dict[str, Any]:
     if category in tags:
         tags = [t for t in tags if t != category]
 
-    return {"category": category, "tags": tags}
+    return {
+        "category": category,
+        "tags": tags,
+        "confidence": confidence,
+        "suggestions": suggestions,
+    }
 
 
 def categorize(
@@ -333,7 +396,7 @@ def categorize(
         client: OllamaClient instance (creates new if None)
 
     Returns:
-        Dict with category and tags keys
+        Dict with category, tags, confidence (0-100), and suggestions keys
     """
     if client is None:
         client = OllamaClient()
@@ -370,7 +433,18 @@ def categorize(
         if category in tags:
             tags = [t for t in tags if t != category]
 
-        return {"category": category, "tags": tags}
+        # AI categorization has high confidence (85)
+        confidence = 85
+
+        # Get suggestions from keyword analysis
+        suggestions = _get_category_suggestions(title, body, category)
+
+        return {
+            "category": category,
+            "tags": tags,
+            "confidence": confidence,
+            "suggestions": suggestions,
+        }
 
     except (OllamaError, ValueError, KeyError) as e:
         # Fall back to keyword heuristic on error

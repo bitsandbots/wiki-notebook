@@ -115,6 +115,11 @@ function displayEditorCategory(note) {
       .replace(/\s+/g, "-")
       .toLowerCase()}`;
 
+    // Add confidence as tooltip if available
+    if (note.confidence !== undefined) {
+      categoryBadge.title = `Confidence: ${note.confidence}%`;
+    }
+
     // Display tags using safe DOM methods
     if (note.tags && note.tags.length > 0) {
       // Clear tags list safely
