@@ -44,6 +44,16 @@ class EnrichmentWorker:
         if self._thread is not None:
             self._thread.join(timeout=5)
 
+    def get_queue_size(self) -> int:
+        """Get current queue size (number of pending items)."""
+        return self.q.qsize()
+
+    def get_stats(self) -> dict[str, int]:
+        """Get worker statistics."""
+        return {
+            "queue_size": self.q.qsize(),
+        }
+
     def enqueue(self, note_id: int) -> None:
         """Enqueue a note for enrichment.
 

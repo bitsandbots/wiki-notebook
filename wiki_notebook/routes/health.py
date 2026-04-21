@@ -60,4 +60,9 @@ def health_check() -> tuple[dict, int]:
         },
     }
 
+    # Add enrichment worker stats
+    if "enrichment" in current_app.extensions:
+        enrichment = current_app.extensions["enrichment"]
+        status["enrichment_queue_size"] = enrichment.get_queue_size()
+
     return jsonify(status), HTTPStatus.OK
