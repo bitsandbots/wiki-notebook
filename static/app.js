@@ -152,6 +152,9 @@ async function handleRecategorize() {
   const categorizBtn = document.getElementById("categorize-btn");
   const pendingIndicator = document.getElementById("editor-enrichment-pending");
 
+  // Guard: prevent double-click
+  if (categorizBtn.disabled) return;
+
   try {
     // Show pending indicator
     pendingIndicator.style.display = "block";
@@ -170,7 +173,14 @@ async function handleRecategorize() {
   } catch (err) {
     console.error("Categorization error:", err);
     pendingIndicator.style.display = "none";
-    alert("Failed to categorize note: " + err.message);
+
+    // Improve error parsing to handle structured API errors
+    const errorMsg =
+      err.message ||
+      (err.error?.message) ||
+      (typeof err === "object" && err.error) ||
+      "Unable to categorize note";
+    alert("Failed to categorize note: " + errorMsg);
   } finally {
     categorizBtn.disabled = false;
   }
