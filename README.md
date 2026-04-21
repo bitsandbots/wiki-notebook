@@ -12,7 +12,7 @@ and insight generation.
 ## Features
 
 - **CRUD API** — Create, read, update, delete notes
-- **Auto-categorization** — Ollama suggests category + tags on save
+- **Auto-categorization** — Ollama suggests category + tags on save — [Learn more](docs/CATEGORIZATION.md)
 - **Full-text search** — FTS5 with BM25 ranking and snippet highlighting
 - **Multi-select & combine** — Merge notes with concatenate or AI synthesis
 - **Optimize & Insights** — AI-powered writing enhancement with undo
