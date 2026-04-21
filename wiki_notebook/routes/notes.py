@@ -348,3 +348,49 @@ def combine_notes_route():
         )
     finally:
         conn.close()
+
+
+@notes_bp.route("/<int:id>/categorize", methods=["POST"])
+def categorize_note_route(id: int) -> tuple:
+    """Manually trigger categorization for a note.
+
+    Re-categorizes the note using Ollama if available, or keyword fallback.
+    Updates category and tags, preserving other note fields.
+
+    Args:
+        id: Note ID to categorize
+
+    Returns:
+        Updated note with new category and tags (200) or error (404)
+    """
+    from ..ai.categorize import categorize
+
+    conn = get_conn()
+    try:
+        note = get_note(conn, id)
+        if not note:
+            return (
+                jsonify(
+                    {
+                        "error": {
+                            "code": "not_found",
+                            "message": "note not found",
+                        }
+                    }
+                ),
+                404,
+            )
+
+        # Run categorization
+        result = categorize(note["title"], note["body"])
+
+        # Update the note with new category and tags
+        update_payload = {
+            "category": result["category"],
+            "tags": result["tags"],
+        }
+        updated_note = update_note(conn, id, update_payload)
+
+        return jsonify(updated_note), 200
+    finally:
+        conn.close()

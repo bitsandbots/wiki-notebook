@@ -170,6 +170,44 @@ class TestNotesDelete:
         assert response.status_code == 404
 
 
+class TestNotesCategorize:
+    """Tests for POST /api/notes/<id>/categorize."""
+
+    def test_categorize_note_with_ollama(self, client, seed_note, monkeypatch):
+        """Manually trigger categorization via API."""
+        # Create a note without category
+        resp = client.post(
+            "/api/notes",
+            json={"title": "Team Meeting", "body": "Discussed Q1 goals"},
+        )
+        note_id = resp.get_json()["id"]
+
+        # Mock the categorize function
+        def mock_categorize(title: str, body: str) -> dict:
+            return {
+                "category": "meetings",
+                "tags": ["q1", "goals"],
+            }
+
+        from wiki_notebook.ai import categorize as cat_module
+
+        monkeypatch.setattr(cat_module, "categorize", mock_categorize)
+
+        # Trigger categorization
+        resp = client.post(f"/api/notes/{note_id}/categorize")
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["category"] == "meetings"
+        assert "q1" in data["tags"]
+
+    def test_categorize_nonexistent_note(self, client):
+        """Returns 404 for nonexistent note."""
+        resp = client.post("/api/notes/99999/categorize")
+        assert resp.status_code == 404
+        assert "not found" in resp.get_json()["error"]["message"]
+
+
 class TestFTS5Sync:
     """Tests for FTS5 trigger synchronization."""
 
