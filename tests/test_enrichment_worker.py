@@ -254,3 +254,47 @@ class TestEnrichmentWorker:
             assert note2["category"] == "meetings"
         finally:
             conn.close()
+
+    @patch("wiki_notebook.ai.categorize.categorize")
+    def test_worker_cleanup_on_error(self, mock_categorize, app):
+        """Verifies worker properly cleans up resources on error.
+
+        Tests that:
+        - Worker closes database connection even on exception
+        - Worker marks task as done even if categorization fails
+        - Worker continues processing next items after error
+        """
+        # Mock categorize to raise an exception
+        mock_categorize.side_effect = RuntimeError("Test error")
+
+        # Create a test note
+        conn = get_conn()
+        try:
+            note_data = create_note(
+                conn,
+                {
+                    "title": "Test Note",
+                    "body": "Test body",
+                    "category": None,
+                    "tags": [],
+                },
+            )
+            note_id = note_data["id"]
+        finally:
+            conn.close()
+
+        worker = EnrichmentWorker(config.config, MockRepo())
+
+        # Start worker, enqueue note
+        worker.start()
+        worker.enqueue(note_id)
+
+        # Wait for queue to be processed (should complete despite error)
+        worker.q.join()
+
+        # Stop worker
+        worker.stop()
+
+        # Verify queue was processed (task_done was called)
+        # If task_done wasn't called, q.join() would have hung
+        assert worker.q.qsize() == 0

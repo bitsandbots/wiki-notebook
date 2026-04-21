@@ -70,6 +70,7 @@ class EnrichmentWorker:
         """Background worker loop with enhanced error handling."""
         from ..ai.categorize import categorize
         from ..ai.ollama_client import OllamaClient
+        from ..db import get_conn
         import logging
 
         logger = logging.getLogger(__name__)
@@ -83,43 +84,36 @@ class EnrichmentWorker:
 
             conn = None
             try:
-                try:
-                    from ..db import get_conn
+                # Get note from database
+                conn = get_conn()
+                note = self.repository.get_note(conn, note_id)
 
-                    conn = get_conn()
-                    note = self.repository.get_note(conn, note_id)
-
-                    if note is None:
-                        logger.debug(f"Note {note_id} not found, skipping")
-                        continue
-
+                if note is None:
+                    logger.debug(f"Note {note_id} not found, skipping")
+                else:
                     logger.debug(f"Enriching note {note_id}: {note.title[:50]}")
 
+                    # Categorize the note
                     client = OllamaClient()
                     result = categorize(note.title, note.body, client)
-
                     logger.debug(f"Categorized {note_id} as '{result['category']}'")
 
-                    conn = get_conn()
-                    try:
-                        self.repository.update_enrichment(
-                            conn,
-                            note_id,
-                            result["category"],
-                            result["tags"],
-                        )
-                    finally:
-                        conn.close()
-                        conn = None
+                    # Update note with enrichment results
+                    self.repository.update_enrichment(
+                        conn,
+                        note_id,
+                        result["category"],
+                        result["tags"],
+                    )
 
                     logger.info(f"Enrichment succeeded for note {note_id}")
 
-                except Exception as e:
-                    logger.exception(f"Enrichment failed for note {note_id}: {e}")
+            except Exception as e:
+                logger.exception(f"Enrichment failed for note {note_id}: {e}")
             finally:
+                # Always clean up connection and mark task done
                 if conn:
                     conn.close()
-                # Always mark task as done, even if it failed
                 self.q.task_done()
 
 
