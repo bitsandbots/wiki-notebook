@@ -91,11 +91,11 @@ class EnrichmentWorker:
                 if note is None:
                     logger.debug(f"Note {note_id} not found, skipping")
                 else:
-                    logger.debug(f"Enriching note {note_id}: {note.title[:50]}")
+                    logger.debug(f"Enriching note {note_id}: {note['title'][:50]}")
 
                     # Categorize the note
                     client = OllamaClient()
-                    result = categorize(note.title, note.body, client)
+                    result = categorize(note["title"], note["body"], client)
                     logger.debug(f"Categorized {note_id} as '{result['category']}'")
 
                     # Update note with enrichment results

@@ -25,23 +25,8 @@ class MockRepo:
 
     def get_note(self, conn: sqlite3.Connection, note_id: int) -> dict[str, Any] | None:
         """Get a note from the database."""
-        from wiki_notebook.models import Note
-
-        note_dict = get_note(conn, note_id)
-        if note_dict is None:
-            return None
-        # Convert dict to Note object for compatibility with worker
-        return Note(
-            id=note_dict["id"],
-            title=note_dict["title"],
-            body=note_dict["body"],
-            category=note_dict.get("category"),
-            tags=note_dict.get("tags", []),
-            created_at=note_dict["created_at"],
-            updated_at=note_dict["updated_at"],
-            optimized_at=note_dict.get("optimized_at"),
-            source_ids=note_dict.get("source_ids"),
-        )
+        # Return dict like the real repository does
+        return get_note(conn, note_id)
 
     def update_enrichment(
         self, conn: sqlite3.Connection, note_id: int, category: str, tags: list[str]
