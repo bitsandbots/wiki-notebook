@@ -767,6 +767,67 @@ a:hover {
   margin-top: 0.4rem;
 }
 
+/* ── Category and Tags Display ───────────────────────────────────────────── */
+.editor-category-section {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: var(--cc-bg-elevated);
+  border-radius: var(--cc-radius-sm);
+  border-left: 3px solid var(--cc-blue-500);
+}
+.category-display-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.category-badge {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  background: linear-gradient(135deg, var(--cc-blue-500), var(--cc-orange-500));
+  color: white;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--cc-font-mono);
+  text-transform: capitalize;
+  flex-shrink: 0;
+}
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex: 1;
+}
+.tag {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: var(--cc-bg-input);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: var(--cc-font-mono);
+  color: var(--cc-text-muted);
+  text-transform: capitalize;
+}
+.enrichment-pending {
+  padding: 0.6rem 0.75rem;
+  background: var(--cc-warning-bg);
+  border-left: 3px solid var(--cc-warning);
+  border-radius: var(--cc-radius-sm);
+  font-size: 0.8rem;
+  color: var(--cc-warning);
+  margin: 1rem 0;
+  font-family: var(--cc-font-mono);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pending-indicator::before {
+  content: "⏳";
+  display: inline-block;
+}
+
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
 .btn {
   font-family: var(--cc-font-mono);

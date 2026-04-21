@@ -190,6 +190,30 @@
               style="display: none"
               aria-label="Note title (view mode)"
             ></div>
+            <!-- Category and tags display -->
+            <div
+              id="editor-category-section"
+              class="editor-category-section"
+              style="display: none"
+              aria-label="Note category and tags"
+            >
+              <div class="category-display-group">
+                <span
+                  id="editor-category-badge"
+                  class="category-badge"
+                ></span>
+                <div id="editor-tags-list" class="tags-list"></div>
+              </div>
+            </div>
+            <div
+              id="editor-enrichment-pending"
+              class="enrichment-pending"
+              style="display: none"
+              aria-live="polite"
+              aria-label="Categorization status"
+            >
+              <span class="pending-indicator">Categorizing…</span>
+            </div>
             <textarea
               id="note-body"
               class="note-body"
@@ -222,6 +246,15 @@
                   aria-hidden="true"
                   >Saving…</span
                 >
+              </button>
+              <button
+                type="button"
+                id="categorize-btn"
+                class="btn btn-secondary"
+                style="display: none"
+                aria-label="Re-categorize this note"
+              >
+                Re-categorize
               </button>
               <button
                 type="button"

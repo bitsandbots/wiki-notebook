@@ -61,6 +61,13 @@ const api = {
     }).then((r) => r.json());
   },
 
+  categorize: (noteId) => {
+    return fetch(`/api/notes/${noteId}/categorize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    }).then((r) => r.json());
+  },
+
   categories: () => {
     return fetch("/api/categories").then((r) => r.json());
   },
@@ -88,6 +95,85 @@ function debounce(fn, delay) {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   };
+}
+
+// Display category and tags in editor
+function displayEditorCategory(note) {
+  const categorySection = document.getElementById("editor-category-section");
+  const categoryBadge = document.getElementById("editor-category-badge");
+  const tagsList = document.getElementById("editor-tags-list");
+  const pendingIndicator = document.getElementById("editor-enrichment-pending");
+
+  if (note.category) {
+    // Show category section, hide pending
+    categorySection.style.display = "block";
+    pendingIndicator.style.display = "none";
+
+    // Update category badge with safe textContent
+    categoryBadge.textContent = note.category;
+    categoryBadge.className = `category-badge category-${note.category
+      .replace(/\s+/g, "-")
+      .toLowerCase()}`;
+
+    // Display tags using safe DOM methods
+    if (note.tags && note.tags.length > 0) {
+      // Clear tags list safely
+      while (tagsList.firstChild) {
+        tagsList.removeChild(tagsList.firstChild);
+      }
+      note.tags.forEach((tag) => {
+        const tagEl = document.createElement("span");
+        tagEl.className = "tag";
+        tagEl.textContent = tag;
+        tagsList.appendChild(tagEl);
+      });
+    } else {
+      // Clear tags list if no tags
+      while (tagsList.firstChild) {
+        tagsList.removeChild(tagsList.firstChild);
+      }
+    }
+  } else if (note.enrichment_pending) {
+    // Show pending indicator
+    pendingIndicator.style.display = "block";
+    categorySection.style.display = "none";
+  } else {
+    // No category yet
+    categorySection.style.display = "none";
+    pendingIndicator.style.display = "none";
+  }
+}
+
+// Recategorize a note
+async function handleRecategorize() {
+  const noteId = state.currentId;
+  if (!noteId) return;
+
+  const categorizBtn = document.getElementById("categorize-btn");
+  const pendingIndicator = document.getElementById("editor-enrichment-pending");
+
+  try {
+    // Show pending indicator
+    pendingIndicator.style.display = "block";
+    categorizBtn.disabled = true;
+
+    const note = await api.categorize(noteId);
+
+    // Update display with new category
+    displayEditorCategory(note);
+
+    // Refresh the notes list to show updated category
+    renderApp();
+    api
+      .categories()
+      .then((data) => renderCategories(data.items, state.category));
+  } catch (err) {
+    console.error("Categorization error:", err);
+    pendingIndicator.style.display = "none";
+    alert("Failed to categorize note: " + err.message);
+  } finally {
+    categorizBtn.disabled = false;
+  }
 }
 
 // Render functions
@@ -346,6 +432,7 @@ function editNote(id) {
     const bodyEl = document.getElementById("note-body");
     const deleteBtn = document.getElementById("delete-btn");
     const undoBtn = document.getElementById("undo-btn");
+    const categorizeBtn = document.getElementById("categorize-btn");
 
     titleEl.value = note.title;
     bodyEl.value = note.body;
@@ -355,6 +442,11 @@ function editNote(id) {
     if (undoBtn && note.optimized_at) {
       undoBtn.style.display = "inline-block";
     }
+    // Show categorize button
+    if (categorizeBtn) categorizeBtn.style.display = "inline-block";
+
+    // Display category and tags
+    displayEditorCategory(note);
 
     // Switch to edit mode
     switchToEditMode();
@@ -380,6 +472,7 @@ function viewNote(id) {
     const bodyEl = document.getElementById("note-body");
     const deleteBtn = document.getElementById("delete-btn");
     const undoBtn = document.getElementById("undo-btn");
+    const categorizeBtn = document.getElementById("categorize-btn");
 
     titleEl.value = note.title;
     bodyEl.value = note.body;
@@ -388,6 +481,11 @@ function viewNote(id) {
     if (undoBtn && note.optimized_at) {
       undoBtn.style.display = "inline-block";
     }
+    // Show categorize button
+    if (categorizeBtn) categorizeBtn.style.display = "inline-block";
+
+    // Display category and tags
+    displayEditorCategory(note);
 
     // Switch to preview mode (rendered markdown)
     console.log("Switching to preview mode for:", note.title);
@@ -602,6 +700,12 @@ function init() {
   const undoBtn = document.getElementById("undo-btn");
   if (undoBtn) {
     undoBtn.addEventListener("click", handleUndo);
+  }
+
+  // Categorize button
+  const categorizeBtn = document.getElementById("categorize-btn");
+  if (categorizeBtn) {
+    categorizeBtn.addEventListener("click", handleRecategorize);
   }
 
   // Clear selection
