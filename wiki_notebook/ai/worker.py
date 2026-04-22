@@ -68,10 +68,11 @@ class EnrichmentWorker:
 
     def _run(self) -> None:
         """Background worker loop with enhanced error handling."""
+        import logging
+
         from ..ai.categorize import categorize
         from ..ai.ollama_client import OllamaClient
         from ..db import get_conn
-        import logging
 
         logger = logging.getLogger(__name__)
         logger.info("Enrichment worker started")

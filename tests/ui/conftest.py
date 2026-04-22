@@ -1,12 +1,13 @@
 """Playwright UI test configuration and fixtures."""
 
-import pytest
+import os
+import signal
+import socket
 import subprocess
 import time
-import os
-import socket
-import signal
 import urllib.request
+
+import pytest
 from playwright.sync_api import Page
 
 # Track server process for cleanup

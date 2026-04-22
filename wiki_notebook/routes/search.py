@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 
 from ..db import get_conn
-from ..validation import ValidationError
 from ..search import fts_search, is_short_query, like_search, sanitize_query
+from ..validation import ValidationError
 
 search_bp = Blueprint("search", __name__, url_prefix="/api")
 
@@ -104,13 +104,15 @@ def list_categories():
     conn = get_conn()
     try:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT category, COUNT(*) as count
             FROM notes
             WHERE category IS NOT NULL AND category != ''
             GROUP BY category
             ORDER BY count DESC
-        """)
+        """
+        )
 
         rows = cursor.fetchall()
         categories = [{"name": row["category"], "count": row["count"]} for row in rows]

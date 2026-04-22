@@ -525,6 +525,6 @@ This accessibility implementation follows best practices from:
 
 ---
 
-**Last Updated:** 2026-04-17  
-**Compliance Level:** WCAG 2.2 Level AA  
+**Last Updated:** 2026-04-17
+**Compliance Level:** WCAG 2.2 Level AA
 **Brand Version:** CoreConduit v2.1 (Silver Theme)

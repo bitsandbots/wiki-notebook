@@ -2,8 +2,8 @@
 
 ## Version 0.2.0 — WCAG 2.2 Accessibility Release
 
-**Release Date:** 2026-04-17  
-**Status:** 🎉 Production Ready  
+**Release Date:** 2026-04-17
+**Status:** 🎉 Production Ready
 **License:** MIT
 
 ---

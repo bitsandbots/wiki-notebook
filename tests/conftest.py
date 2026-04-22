@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from wiki_notebook import config
 from wiki_notebook.app import create_app
 from wiki_notebook.db import init_db
-from wiki_notebook import config
 
 
 @pytest.fixture
@@ -57,9 +57,7 @@ def seed_note(app):
     ) -> int:
         conn = get_conn()
         try:
-            from datetime import datetime
-
-            from datetime import timezone
+            from datetime import datetime, timezone
 
             now = datetime.now(timezone.utc).isoformat().replace("+00:00", "")
             cursor = conn.cursor()

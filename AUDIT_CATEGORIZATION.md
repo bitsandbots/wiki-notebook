@@ -1,8 +1,8 @@
 # Categorization Feature Security & Code Quality Audit
 
-**Date:** 2026-04-21  
-**Scope:** Automatic categorization feature (routes, AI logic, workers, frontend)  
-**Reviewed by:** Code Audit Tool  
+**Date:** 2026-04-21
+**Scope:** Automatic categorization feature (routes, AI logic, workers, frontend)
+**Reviewed by:** Code Audit Tool
 
 ---
 
@@ -37,8 +37,8 @@ None identified.
 
 ### 1. Missing Validation in Categorization Route (Data Integrity)
 
-**File:** `wiki_notebook/routes/notes.py:353-443`  
-**Lines:** 421-424  
+**File:** `wiki_notebook/routes/notes.py:353-443`
+**Lines:** 421-424
 **Severity:** MEDIUM
 
 **Issue:**
@@ -65,12 +65,12 @@ Add explicit validation in the route layer:
 ```python
 try:
     result = categorize(note["title"], note["body"])
-    
+
     # Validate result before updating
     from ..validation import validate_category, validate_tags
     validated_category = validate_category(result["category"])
     validated_tags = validate_tags(result["tags"])
-    
+
     update_payload = {
         "category": validated_category,
         "tags": validated_tags,
@@ -84,7 +84,7 @@ This ensures defense-in-depth and consistency with the validation pattern used e
 
 ### 2. Incomplete Error Recovery in Frontend (User Experience)
 
-**File:** `static/app.js:170-176`  
+**File:** `static/app.js:170-176`
 **Severity:** MEDIUM
 
 **Issue:**
@@ -112,10 +112,10 @@ Improve error parsing to handle structured API responses:
 } catch (err) {
     console.error("Categorization error:", err);
     pendingIndicator.style.display = "none";
-    
+
     // Parse structured API errors or fallback
-    const errorMsg = err.message || 
-                     (err.error?.message) || 
+    const errorMsg = err.message ||
+                     (err.error?.message) ||
                      "Unable to categorize note";
     alert("Failed to categorize note: " + errorMsg);
 } finally {
@@ -127,7 +127,7 @@ Improve error parsing to handle structured API responses:
 
 ### 3. Incomplete Error Response in Backend (API Contract)
 
-**File:** `wiki_notebook/routes/notes.py:428-441`  
+**File:** `wiki_notebook/routes/notes.py:428-441`
 **Severity:** MEDIUM
 
 **Issue:**
@@ -178,7 +178,7 @@ The logger already captures the full exception, so no information is lost for de
 
 ### 4. Category Keywords Contain Duplicates (Code Quality)
 
-**File:** `wiki_notebook/ai/categorize.py:197-314`  
+**File:** `wiki_notebook/ai/categorize.py:197-314`
 **Severity:** MEDIUM
 
 **Issue:**
@@ -217,7 +217,7 @@ This is not a security issue but impacts feature quality and maintainability.
 
 ### 5. Worker Thread Resource Cleanup (Thread Safety)
 
-**File:** `wiki_notebook/ai/worker.py:84-123`  
+**File:** `wiki_notebook/ai/worker.py:84-123`
 **Severity:** MEDIUM
 
 **Issue:**
@@ -255,18 +255,18 @@ try:
     from ..db import get_conn
     conn = get_conn()
     note = self.repository.get_note(conn, note_id)
-    
+
     if note is None:
         logger.debug(f"Note {note_id} not found, skipping")
         continue
-    
+
     logger.debug(f"Enriching note {note_id}: {note.title[:50]}")
-    
+
     client = OllamaClient()
     result = categorize(note.title, note.body, client)
-    
+
     logger.debug(f"Categorized {note_id} as '{result['category']}'")
-    
+
     # Use same connection for update
     try:
         self.repository.update_enrichment(
@@ -287,7 +287,7 @@ finally:
 
 ### 6. No Maximum Input Sanitization in Categorize Prompt (Prompt Injection Risk)
 
-**File:** `wiki_notebook/ai/categorize.py:329-339`  
+**File:** `wiki_notebook/ai/categorize.py:329-339`
 **Severity:** MEDIUM
 
 **Issue:**
@@ -312,13 +312,13 @@ Add basic escaping for common problematic characters:
 ```python
 def _format_prompt(template: str, title: str, body: str) -> str:
     """Format a prompt template using %s placeholders.
-    
+
     Sanitizes input to prevent prompt injection.
     """
     # Escape problematic sequences
     title_safe = title[:200].replace('\\', '\\\\').replace('"', '\\"')
     body_safe = body[:4000].replace('\\', '\\\\').replace('"', '\\"')
-    
+
     template = template.replace("{title}", "%s")
     template = template.replace("{body}", "%s")
     return template % (title_safe, body_safe)
@@ -330,7 +330,7 @@ def _format_prompt(template: str, title: str, body: str) -> str:
 
 ### 1. Type Hint Import in Worker (Code Style)
 
-**File:** `wiki_notebook/ai/worker.py:127`  
+**File:** `wiki_notebook/ai/worker.py:127`
 **Issue:** Function `enrich_note()` uses `dict[str, Any]` return type but `Any` is imported only under `TYPE_CHECKING`. The function should either use string literal `"dict[str, Any]"` or import `Any` at module level.
 
 **Current:**
@@ -347,7 +347,7 @@ def enrich_note(note_id: int, category: str, tags: list[str]) -> dict[str, Any]:
 
 ### 2. Unnecessary Import in Route (Code Style)
 
-**File:** `wiki_notebook/routes/notes.py:366`  
+**File:** `wiki_notebook/routes/notes.py:366`
 **Issue:** Logging is imported inside the function rather than at module level. This is unconventional and creates startup overhead.
 
 **Current:**
@@ -365,7 +365,7 @@ def categorize_note_route(id: int) -> tuple:
 
 ### 3. Missing API Documentation
 
-**File:** `wiki_notebook/routes/notes.py:353-365`  
+**File:** `wiki_notebook/routes/notes.py:353-365`
 **Issue:** Route docstring doesn't document error responses or edge cases (empty content note, Ollama unavailability).
 
 **Recommendation:** Expand docstring:
@@ -380,7 +380,7 @@ Args:
 
 Returns:
     Updated note with new category and tags (200)
-    
+
 Error Responses:
     - 400: Invalid note ID or note missing content
     - 404: Note not found
@@ -392,7 +392,7 @@ Error Responses:
 
 ### 4. HTML Accessibility: Missing ARIA Labels
 
-**File:** `static/index.html:198`  
+**File:** `static/index.html:198`
 **Issue:** The `editor-enrichment-pending` element (lines 194-207) lacks an aria-live or role attribute for screen reader announcements when enrichment status changes.
 
 **Current:**
@@ -404,8 +404,8 @@ Error Responses:
 
 **Recommendation:**
 ```html
-<div 
-  id="editor-enrichment-pending" 
+<div
+  id="editor-enrichment-pending"
   style="display: none"
   role="status"
   aria-live="polite"
@@ -419,7 +419,7 @@ Error Responses:
 
 ### 5. Frontend: Potential Race Condition on Rapid Clicks
 
-**File:** `static/app.js:155-158`  
+**File:** `static/app.js:155-158`
 **Issue:** If user clicks "Recategorize" multiple times rapidly, multiple requests could be sent before the button is disabled.
 
 **Current:**

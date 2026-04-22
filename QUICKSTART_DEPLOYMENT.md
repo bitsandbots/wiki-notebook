@@ -225,7 +225,7 @@ sudo tee /etc/nginx/sites-available/wiki-notebook > /dev/null <<'EOF'
 server {
     listen 80;
     server_name wiki-notebook.local;
-    
+
     location / {
         proxy_pass http://127.0.0.1:5000;
         proxy_set_header Host $host;

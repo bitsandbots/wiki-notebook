@@ -29,17 +29,17 @@ def test_categorize_note_with_ollama(self, mock_ollama):
         json={"title": "Team Meeting", "body": "Discussed Q1 goals"},
     )
     note_id = resp.get_json()["id"]
-    
+
     # Mock Ollama response
     mock_ollama.return_value.is_available.return_value = True
     mock_ollama.return_value.generate_json.return_value = {
         "category": "meetings",
         "tags": ["q1", "goals"],
     }
-    
+
     # Trigger categorization
     resp = self.client.post(f"/api/notes/{note_id}/categorize")
-    
+
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["category"] == "meetings"
@@ -63,12 +63,12 @@ In `wiki_notebook/routes/notes.py`, add after the `combine_notes_route()` functi
 @notes_bp.route("/<int:id>/categorize", methods=["POST"])
 def categorize_note_route(id):
     """Manually trigger categorization for a note.
-    
+
     Re-categorizes the note using Ollama if available, or keyword fallback.
     Updates category and tags, preserving other note fields.
     """
     from ..ai.categorize import categorize as categorize_note
-    
+
     conn = get_conn()
     try:
         note = get_note(conn, id)
@@ -77,17 +77,17 @@ def categorize_note_route(id):
                 jsonify({"error": {"code": "not_found", "message": "note not found"}}),
                 404,
             )
-        
+
         # Run categorization
         result = categorize_note(note["title"], note["body"])
-        
+
         # Update the note with new category and tags
         update_payload = {
             "category": result["category"],
             "tags": result["tags"],
         }
         updated_note = update_note(conn, id, update_payload)
-        
+
         return jsonify(updated_note), 200
     finally:
         conn.close()
@@ -146,21 +146,21 @@ class TestEnrichmentWorker:
         class MockRepo:
             def get_note(self, conn, note_id):
                 return get_note(conn, note_id)
-            
+
             def update_enrichment(self, conn, note_id, category, tags):
                 from wiki_notebook.repository import update_enrichment
                 return update_enrichment(conn, note_id, category, tags)
-        
+
         # Create worker
         worker = EnrichmentWorker(config, MockRepo())
-        
+
         # Create a test note
         note = create_note(
             db_conn,
             {"title": "Team Meeting", "body": "Discussed Q1 goals", "tags": []}
         )
         note_id = note["id"]
-        
+
         # Mock Ollama response
         with patch("wiki_notebook.ai.categorize.OllamaClient") as mock_client_class:
             mock_client = MagicMock(spec=OllamaClient)
@@ -170,19 +170,19 @@ class TestEnrichmentWorker:
                 "tags": ["q1", "goals"],
             }
             mock_client_class.return_value = mock_client
-            
+
             # Start worker
             worker.start()
-            
+
             # Enqueue the note
             worker.enqueue(note_id)
-            
+
             # Wait for processing (with timeout)
             worker.q.join()
-            
+
             # Stop worker
             worker.stop()
-        
+
         # Verify note was updated
         updated_note = get_note(db_conn, note_id)
         assert updated_note["category"] == "meetings"
@@ -193,32 +193,32 @@ class TestEnrichmentWorker:
         class MockRepo:
             def get_note(self, conn, note_id):
                 return get_note(conn, note_id)
-            
+
             def update_enrichment(self, conn, note_id, category, tags):
                 from wiki_notebook.repository import update_enrichment
                 return update_enrichment(conn, note_id, category, tags)
-        
+
         worker = EnrichmentWorker(config, MockRepo())
-        
+
         # Create a test note with obvious keyword
         note = create_note(
             db_conn,
             {"title": "Meeting Notes", "body": "Team discussion about timeline", "tags": []}
         )
         note_id = note["id"]
-        
+
         # Mock Ollama to fail
         with patch("wiki_notebook.ai.categorize.OllamaClient") as mock_client_class:
             mock_client = MagicMock(spec=OllamaClient)
             mock_client.is_available.return_value = True
             mock_client.generate_json.side_effect = Exception("Ollama error")
             mock_client_class.return_value = mock_client
-            
+
             worker.start()
             worker.enqueue(note_id)
             worker.q.join()
             worker.stop()
-        
+
         # Should fall back to keyword matching
         updated_note = get_note(db_conn, note_id)
         assert updated_note["category"] == "meetings"  # Keyword fallback
@@ -228,20 +228,20 @@ class TestEnrichmentWorker:
         class MockRepo:
             def get_note(self, conn, note_id):
                 return get_note(conn, note_id)
-            
+
             def update_enrichment(self, conn, note_id, category, tags):
                 from wiki_notebook.repository import update_enrichment
                 return update_enrichment(conn, note_id, category, tags)
-        
+
         worker = EnrichmentWorker(config, MockRepo())
-        
+
         # Fill the queue
         for i in range(1000):
             worker.enqueue(i)
-        
+
         # This should not block, just silently drop the item
         worker.enqueue(1001)  # Should not raise
-        
+
         assert True  # Test passes if no exception
 
     def test_worker_skips_nonexistent_note(self, db_conn):
@@ -249,19 +249,19 @@ class TestEnrichmentWorker:
         class MockRepo:
             def get_note(self, conn, note_id):
                 return get_note(conn, note_id)
-            
+
             def update_enrichment(self, conn, note_id, category, tags):
                 from wiki_notebook.repository import update_enrichment
                 return update_enrichment(conn, note_id, category, tags)
-        
+
         worker = EnrichmentWorker(config, MockRepo())
         worker.start()
-        
+
         # Enqueue a note that doesn't exist
         worker.enqueue(99999)
         worker.q.join()
         worker.stop()
-        
+
         # Should not crash, just skip it
         assert True
 ```
@@ -312,15 +312,15 @@ In `wiki_notebook/routes/health.py`, update the health check:
 def health_check():
     """Health check endpoint with system status."""
     from flask import current_app
-    
+
     # ... existing health check code ...
-    
+
     # Add enrichment worker stats
     enrichment = None
     if "enrichment" in current_app.extensions:
         enrichment = current_app.extensions["enrichment"]
         health_data["enrichment_queue_size"] = enrichment.get_queue_size()
-    
+
     return jsonify(health_data)
 ```
 
@@ -332,7 +332,7 @@ In `tests/test_health.py`, add:
 def test_health_includes_enrichment_stats(self, client):
     """Health endpoint includes enrichment queue metrics."""
     resp = client.get("/api/health")
-    
+
     assert resp.status_code == 200
     data = resp.get_json()
     assert "enrichment_queue_size" in data
@@ -398,12 +398,12 @@ function displayNoteCategory(note) {
     const categoryBadge = document.getElementById(`category-badge-${note.id}`);
     const tagsList = document.getElementById(`tags-list-${note.id}`);
     const pendingIndicator = document.getElementById(`enrichment-pending-${note.id}`);
-    
+
     if (note.category) {
         categorySection.style.display = 'block';
         categoryBadge.textContent = note.category;
         categoryBadge.className = `category-badge category-${note.category.replace(/\s+/g, '-')}`;
-        
+
         // Display tags using safe DOM methods
         if (note.tags && note.tags.length > 0) {
             tagsList.innerHTML = '';  // Clear first
@@ -425,12 +425,12 @@ async function recategorizeNote(noteId) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
         });
-        
+
         if (!resp.ok) {
             showError('Failed to recategorize note');
             return;
         }
-        
+
         const note = await resp.json();
         displayNoteCategory(note);
         showSuccess('Note recategorized');
@@ -565,16 +565,16 @@ def _run(self) -> None:
     from ..ai.categorize import categorize
     from ..ai.ollama_client import OllamaClient
     import logging
-    
+
     logger = logging.getLogger(__name__)
     logger.info("Enrichment worker started")
-    
+
     while not self._shutdown:
         try:
             note_id = self.q.get(timeout=1)
         except queue.Empty:
             continue
-        
+
         processed = False
         conn = None
         try:
@@ -582,19 +582,19 @@ def _run(self) -> None:
                 from ..db import get_conn
                 conn = get_conn()
                 note = self.repository.get_note(conn, note_id)
-                
+
                 if note is None:
                     logger.debug(f"Note {note_id} not found, skipping")
                     processed = True
                     continue
-                
+
                 logger.debug(f"Enriching note {note_id}: {note['title'][:50]}")
-                
+
                 client = OllamaClient()
                 result = categorize(note['title'], note['body'], client)
-                
+
                 logger.debug(f"Categorized {note_id} as '{result['category']}'")
-                
+
                 conn = get_conn()
                 try:
                     self.repository.update_enrichment(
@@ -606,10 +606,10 @@ def _run(self) -> None:
                 finally:
                     conn.close()
                     conn = None
-                
+
                 processed = True
                 logger.info(f"Enrichment succeeded for note {note_id}")
-                
+
             except Exception as e:
                 logger.exception(f"Enrichment failed for note {note_id}: {e}")
         finally:
@@ -628,14 +628,14 @@ In `wiki_notebook/routes/notes.py`, improve the `categorize_note_route()` functi
 def categorize_note_route(id):
     """Manually trigger categorization for a note."""
     from ..ai.categorize import categorize as categorize_note
-    
+
     # Validate note ID
     if not isinstance(id, int) or id < 1:
         return (
             jsonify({"error": {"code": "invalid_input", "message": "invalid note ID"}}),
             400,
         )
-    
+
     conn = get_conn()
     try:
         note = get_note(conn, id)
@@ -644,7 +644,7 @@ def categorize_note_route(id):
                 jsonify({"error": {"code": "not_found", "message": "note not found"}}),
                 404,
             )
-        
+
         # Validate note has content
         if not note["title"] or not note["body"]:
             return (
@@ -656,24 +656,24 @@ def categorize_note_route(id):
                 }),
                 400,
             )
-        
+
         try:
             # Run categorization
             result = categorize_note(note["title"], note["body"])
-            
+
             # Update the note
             update_payload = {
                 "category": result["category"],
                 "tags": result["tags"],
             }
             updated_note = update_note(conn, id, update_payload)
-            
+
             return jsonify(updated_note), 200
         except Exception as e:
             import logging
             logger = logging.getLogger(__name__)
             logger.exception(f"Categorization failed for note {id}")
-            
+
             return (
                 jsonify({
                     "error": {
@@ -705,12 +705,12 @@ class TestCategorizeErrorHandling:
     def test_categorize_empty_note(self, client, db_conn):
         """Cannot categorize note with empty title or body."""
         from wiki_notebook.repository import create_note
-        
+
         # Create a note with minimal content
         note = create_note(db_conn, {"title": "", "body": "content"})
-        
+
         resp = client.post(f"/api/notes/{note['id']}/categorize")
-        
+
         assert resp.status_code == 400
         assert "must have title and body" in resp.get_json()["error"]["message"]
 
@@ -722,17 +722,17 @@ class TestCategorizeErrorHandling:
     def test_categorize_handles_ollama_timeout(self, client, db_conn):
         """Gracefully handles Ollama timeout."""
         from wiki_notebook.repository import create_note
-        
+
         note = create_note(db_conn, {"title": "Test", "body": "Content"})
-        
+
         with patch("wiki_notebook.ai.categorize.OllamaClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client.is_available.return_value = True
             mock_client.generate_json.side_effect = TimeoutError("Ollama timeout")
             mock_client_class.return_value = mock_client
-            
+
             resp = client.post(f"/api/notes/{note['id']}/categorize")
-            
+
             # Should succeed with fallback
             assert resp.status_code == 200
             data = resp.get_json()

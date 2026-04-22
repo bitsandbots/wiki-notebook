@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any
-
 import sqlite3
+from typing import Any
 
 
 def sanitize_query(q: str) -> str:

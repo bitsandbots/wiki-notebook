@@ -6,7 +6,7 @@ import json
 from http import HTTPStatus
 
 import requests
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, current_app, jsonify
 
 from ..config import config
 

@@ -18,11 +18,11 @@ This document provides a comprehensive testing checklist for verifying all acces
 - [ ] **NVDA** (Windows) — [Download](https://www.nvaccess.org/)
   - Start: Press Ctrl+Alt+N
   - Stop: Press Ctrl+Alt+N
-  
+
 - [ ] **VoiceOver** (Mac/iOS) — Built-in
   - Enable: Cmd+F5
   - Navigate: VO+Right Arrow (next), VO+Left Arrow (previous)
-  
+
 - [ ] **TalkBack** (Android) — Built-in
   - Enable: Settings → Accessibility → TalkBack
   - Navigate: Swipe right (next), swipe left (previous)
@@ -566,9 +566,9 @@ Browser: __________
 Assistive Tech: __________
 
 Issues Found:
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 Resolution:
 ```
@@ -585,6 +585,6 @@ Resolution:
 
 ---
 
-**Last Updated:** 2026-04-17  
-**WCAG Compliance Level:** 2.2 Level AA  
+**Last Updated:** 2026-04-17
+**WCAG Compliance Level:** 2.2 Level AA
 **Expected Duration:** 2-3 hours for complete testing

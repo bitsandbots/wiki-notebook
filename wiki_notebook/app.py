@@ -2,21 +2,22 @@
 
 from __future__ import annotations
 
-from flask import Flask, jsonify
 import json
 from http import HTTPStatus
 
+from flask import Flask, jsonify
 from werkzeug.exceptions import HTTPException
 
 from .config import config
-from .db import init_db, check_schema
+from .db import check_schema, init_db
 
 
 def register_static_routes(app):
     """Register static file serving and root route."""
-    from flask import send_from_directory, current_app
     import os
     from pathlib import Path
+
+    from flask import current_app, send_from_directory
 
     # Static files route
     static_dir = Path(__file__).parent.parent / "static"
@@ -75,8 +76,8 @@ def create_app() -> Flask:
         delete_note,
         get_note,
         list_notes,
-        update_note,
         update_enrichment,
+        update_note,
     )
 
     # Create a mock config for testing

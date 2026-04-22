@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from flask import Blueprint, request, jsonify, current_app
+
+from flask import Blueprint, current_app, jsonify, request
 
 from ..config import config
 from ..db import get_conn

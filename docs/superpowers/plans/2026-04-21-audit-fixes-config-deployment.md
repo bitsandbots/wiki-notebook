@@ -4,7 +4,7 @@
 
 **Goal:** Fix 6 medium-priority audit issues, add configuration/customization features (custom categories, confidence scoring, category suggestions), and enable self-hosted Raspberry Pi deployment via systemd.
 
-**Architecture:** 
+**Architecture:**
 - **Audit Fixes:** Defense-in-depth validation at route layer, safer error responses, sanitized AI prompts, deduped keyword lists, cleaner resource management
 - **Configuration:** Load custom categories from environment/file (config singleton pattern), compute confidence scores during categorization, return top 3 alternative suggestions
 - **Deployment:** Systemd service wrapping Flask app, health checks, auto-restart, logging to syslog
@@ -32,37 +32,37 @@ class TestCategoryValidation:
         """Valid category returns string unchanged."""
         result = validate_category("meetings")
         assert result == "meetings"
-    
+
     def test_validate_category_none(self):
         """None category returns None."""
         result = validate_category(None)
         assert result is None
-    
+
     def test_validate_category_empty_string(self):
         """Empty string raises ValueError."""
         with pytest.raises(ValueError, match="category cannot be empty"):
             validate_category("")
-    
+
     def test_validate_category_too_long(self):
         """Category >50 chars raises ValueError."""
         with pytest.raises(ValueError, match="category must be ≤50 characters"):
             validate_category("a" * 51)
-    
+
     def test_validate_tags_valid(self):
         """Valid tags list returns unchanged."""
         result = validate_tags(["meeting", "notes"])
         assert result == ["meeting", "notes"]
-    
+
     def test_validate_tags_none(self):
         """None tags returns empty list."""
         result = validate_tags(None)
         assert result == []
-    
+
     def test_validate_tags_not_list(self):
         """Non-list tags raises ValueError."""
         with pytest.raises(ValueError, match="tags must be a list"):
             validate_tags("meeting")
-    
+
     def test_validate_tags_item_too_long(self):
         """Tag item >30 chars raises ValueError."""
         with pytest.raises(ValueError, match="each tag must be ≤30 characters"):
@@ -84,56 +84,56 @@ In `wiki_notebook/validation.py`, add after existing validators:
 ```python
 def validate_category(category: str | None) -> str | None:
     """Validate category string.
-    
+
     Args:
         category: Category name or None
-    
+
     Returns:
         Valid category string or None
-        
+
     Raises:
         ValueError: If category is invalid
     """
     if category is None:
         return None
-    
+
     if not isinstance(category, str):
         raise ValueError("category must be a string")
-    
+
     if category.strip() == "":
         raise ValueError("category cannot be empty")
-    
+
     if len(category) > 50:
         raise ValueError("category must be ≤50 characters")
-    
+
     return category.strip()
 
 
 def validate_tags(tags: list[str] | None) -> list[str]:
     """Validate tags list.
-    
+
     Args:
         tags: List of tag strings or None
-    
+
     Returns:
         Valid list of tags (empty list if None)
-        
+
     Raises:
         ValueError: If tags list is invalid
     """
     if tags is None:
         return []
-    
+
     if not isinstance(tags, list):
         raise ValueError("tags must be a list")
-    
+
     for tag in tags:
         if not isinstance(tag, str):
             raise ValueError("each tag must be a string")
-        
+
         if len(tag) > 30:
             raise ValueError("each tag must be ≤30 characters")
-    
+
     return [tag.strip() for tag in tags if tag.strip()]
 ```
 
@@ -174,13 +174,13 @@ def test_categorize_error_response_format(self, mock_categorize):
         json={"title": "Test", "body": "Test body"},
     )
     note_id = resp.get_json()["id"]
-    
+
     # Mock categorization to raise exception
     mock_categorize.side_effect = RuntimeError("Internal Ollama error: connection refused")
-    
+
     # Trigger categorization
     resp = self.client.post(f"/api/notes/{note_id}/categorize")
-    
+
     # Verify response structure and generic message (no exception details)
     assert resp.status_code == 500
     data = resp.get_json()
@@ -257,16 +257,16 @@ def test_categorize_validates_result(self, mock_categorize):
         json={"title": "Test", "body": "Test body"},
     )
     note_id = resp.get_json()["id"]
-    
+
     # Mock categorization to return invalid category (too long)
     mock_categorize.return_value = {
         "category": "a" * 51,  # Invalid: >50 chars
         "tags": ["tag1"],
     }
-    
+
     # Trigger categorization
     resp = self.client.post(f"/api/notes/{note_id}/categorize")
-    
+
     # Should return 400 for invalid data, not update DB
     assert resp.status_code == 400
     data = resp.get_json()
@@ -290,7 +290,7 @@ In `wiki_notebook/routes/notes.py`, replace lines 416-427:
         try:
             # Run categorization
             result = categorize(note["title"], note["body"])
-            
+
             # Validate result before updating (defense-in-depth)
             try:
                 validated_category = validate_category(result["category"])
@@ -308,7 +308,7 @@ In `wiki_notebook/routes/notes.py`, replace lines 416-427:
                     ),
                     400,
                 )
-            
+
             # Update the note with validated category and tags
             update_payload = {
                 "category": validated_category,
@@ -356,16 +356,16 @@ In `tests/test_categorize.py`, add:
 def test_category_keywords_no_duplicates():
     """CATEGORY_KEYWORDS has no duplicate entries."""
     from wiki_notebook.ai.categorize import CATEGORY_KEYWORDS
-    
+
     for category, keywords in CATEGORY_KEYWORDS.items():
         # Count occurrences of each keyword
         keyword_counts = {}
         for kw in keywords:
             keyword_counts[kw] = keyword_counts.get(kw, 0) + 1
-        
+
         # Find duplicates
         duplicates = {kw: count for kw, count in keyword_counts.items() if count > 1}
-        
+
         # Assert no duplicates
         assert not duplicates, f"Category '{category}' has duplicate keywords: {duplicates}"
 ```
@@ -478,26 +478,26 @@ In `tests/test_categorize.py`, add:
 def test_sanitize_prompt_escapes_quotes():
     """Prompt sanitization escapes quotes in title/body."""
     from wiki_notebook.ai.categorize import _format_prompt
-    
+
     template = "Title: {title}\nBody: {body}"
     title = 'Meeting: "Q1 Review"'
     body = 'Discussed "budget" allocation'
-    
+
     result = _format_prompt(template, title, body)
-    
+
     # Quotes should be escaped
     assert '\\"' in result or '"' not in result.split('\n')[0]  # Either escaped or removed
 
 def test_sanitize_prompt_handles_newlines():
     """Prompt sanitization handles newlines in input."""
     from wiki_notebook.ai.categorize import _format_prompt
-    
+
     template = "Title: {title}\nBody: {body}"
     title = "Title\nWith\nNewlines"
     body = "Body with\nmultiple\nlines"
-    
+
     result = _format_prompt(template, title, body)
-    
+
     # Should not break prompt structure
     assert result.count('\n') >= 2  # Template newlines preserved
     assert '{title}' not in result
@@ -520,28 +520,28 @@ In `wiki_notebook/ai/categorize.py`, replace the `_format_prompt` function:
 ```python
 def _format_prompt(template: str, title: str, body: str) -> str:
     """Format a prompt template using {title} and {body} placeholders.
-    
+
     Sanitizes input to prevent prompt injection attacks.
-    
+
     Args:
         template: Template string with {title} and {body} placeholders
         title: Note title (max 200 chars)
         body: Note body (max 4000 chars)
-    
+
     Returns:
         Formatted prompt with sanitized inputs
     """
     # Sanitize inputs: escape backslashes and quotes
     def sanitize(text: str) -> str:
         return text.replace("\\", "\\\\").replace('"', '\\"')
-    
+
     title_safe = sanitize(title[:200])
     body_safe = sanitize(body[:4000])
-    
+
     # Replace placeholders
     result = template.replace("{title}", title_safe)
     result = result.replace("{body}", body_safe)
-    
+
     return result
 ```
 
@@ -577,19 +577,19 @@ In `tests/test_enrichment_worker.py`, add:
 def test_worker_cleanup_on_error(self):
     """Worker properly closes connection even if update fails."""
     from unittest.mock import MagicMock
-    
+
     # Create worker with mocked repo that fails on update
     worker = EnrichmentWorker()
     worker.repository = MagicMock()
     worker.repository.get_note.return_value = self.test_note
     worker.repository.update_enrichment.side_effect = RuntimeError("DB error")
-    
+
     # Enqueue a note
     worker.enqueue(self.test_note.id)
-    
+
     # Process queue
     worker._run()
-    
+
     # Verify connection was never left dangling
     # (This is verified by the test not hanging and task being marked done)
     assert worker.q.empty()
@@ -615,32 +615,32 @@ In `wiki_notebook/ai/worker.py`, replace the `_run` method (lines 84-123):
                 # Get next item from queue
                 item = self.q.get(timeout=1)
                 note_id = item
-                
+
                 logger.debug(f"Processing enrichment for note {note_id}")
-                
+
                 conn = None
                 try:
                     # Get database connection
                     from ..db import get_conn
                     conn = get_conn()
-                    
+
                     # Fetch note
                     note = self.repository.get_note(conn, note_id)
-                    
+
                     if note is None:
                         logger.debug(f"Note {note_id} not found, skipping")
                         continue
-                    
+
                     logger.debug(f"Enriching note {note_id}: {note.title[:50]}")
-                    
+
                     # Categorize note
                     from .categorize import categorize
                     result = categorize(note.title, note.body)
-                    
+
                     logger.debug(
                         f"Categorized note {note_id} as '{result['category']}'"
                     )
-                    
+
                     # Update note with categorization
                     try:
                         self.repository.update_enrichment(
@@ -652,19 +652,19 @@ In `wiki_notebook/ai/worker.py`, replace the `_run` method (lines 84-123):
                         logger.debug(f"Updated enrichment for note {note_id}")
                     except Exception as e:
                         logger.exception(f"Update failed for note {note_id}: {e}")
-                
+
                 except Exception as e:
                     logger.exception(f"Enrichment failed for note {note_id}: {e}")
-                
+
                 finally:
                     # Always close connection
                     if conn:
                         conn.close()
                         conn = None
-                    
+
                     # Mark task as done
                     self.q.task_done()
-            
+
             except TimeoutError:
                 # Queue timeout — continue waiting
                 continue
@@ -704,10 +704,10 @@ In `static/app.js`, replace lines 170-176:
     } catch (err) {
       console.error("Categorization error:", err);
       pendingIndicator.style.display = "none";
-      
+
       // Parse structured API errors or fallback to generic message
-      const errorMsg = err.message || 
-                       (err.error?.message) || 
+      const errorMsg = err.message ||
+                       (err.error?.message) ||
                        "Unable to categorize note";
       alert("Failed to categorize note: " + errorMsg);
     } finally {
@@ -723,7 +723,7 @@ async function handleRecategorize() {
   if (!noteId) return;
 
   const categorizBtn = document.getElementById("categorize-btn");
-  
+
   // Prevent double-click: if already disabled, don't proceed
   if (categorizBtn.disabled) return;
   categorizBtn.disabled = true;
@@ -779,30 +779,30 @@ class TestCategoryConfig:
     def test_load_default_categories(self):
         """Load default categories when no custom config."""
         keywords = load_category_keywords()
-        
+
         assert isinstance(keywords, dict)
         assert "meetings" in keywords
         assert "personal" in keywords
         assert "work" in keywords
         assert len(keywords) > 0
-    
+
     def test_load_categories_from_env(self):
         """Load categories from environment variable."""
         custom = '{"custom_cat": ["keyword1", "keyword2"]}'
         os.environ["WIKI_NOTE_CATEGORIES"] = custom
-        
+
         keywords = load_category_keywords()
-        
+
         assert "custom_cat" in keywords
         assert "keyword1" in keywords["custom_cat"]
-        
+
         # Cleanup
         del os.environ["WIKI_NOTE_CATEGORIES"]
-    
+
     def test_get_custom_categories_list(self):
         """Return list of available category names."""
         categories = get_custom_categories()
-        
+
         assert isinstance(categories, list)
         assert len(categories) > 0
         assert all(isinstance(cat, str) for cat in categories)
@@ -908,19 +908,19 @@ def load_category_keywords() -> dict[str, list[str]]:
     """
     # Check for custom categories in environment
     custom_config = os.getenv("WIKI_NOTE_CATEGORIES")
-    
+
     if custom_config:
         try:
             custom = json.loads(custom_config)
             logger.info(f"Loaded {len(custom)} custom categories from env")
-            
+
             # Merge custom with defaults (custom takes precedence)
             merged = DEFAULT_CATEGORY_KEYWORDS.copy()
             merged.update(custom)
             return merged
         except json.JSONDecodeError as e:
             logger.warning(f"Failed to parse WIKI_NOTE_CATEGORIES: {e}, using defaults")
-    
+
     return DEFAULT_CATEGORY_KEYWORDS.copy()
 
 
@@ -993,9 +993,9 @@ In `tests/test_categorize.py`, add:
 def test_categorize_returns_confidence(self):
     """Categorization returns confidence score (0-100)."""
     from wiki_notebook.ai.categorize import categorize
-    
+
     result = categorize("Team Meeting Notes", "Discussed Q1 roadmap and timeline")
-    
+
     assert "confidence" in result
     assert isinstance(result["confidence"], (int, float))
     assert 0 <= result["confidence"] <= 100
@@ -1003,13 +1003,13 @@ def test_categorize_returns_confidence(self):
 def test_categorize_returns_suggestions(self):
     """Categorization returns top 3 alternative categories."""
     from wiki_notebook.ai.categorize import categorize
-    
+
     result = categorize("Team Meeting Notes", "Discussed Q1 roadmap and timeline")
-    
+
     assert "suggestions" in result
     assert isinstance(result["suggestions"], list)
     assert len(result["suggestions"]) <= 3
-    
+
     # Each suggestion should have category, confidence, and score
     for suggestion in result["suggestions"]:
         assert "category" in suggestion
@@ -1065,12 +1065,12 @@ def categorize(
                 if category in keywords:
                     # Calculate confidence based on match quality
                     confidence = 85  # AI categorization is high confidence
-                    
+
                     # Get suggestions
                     suggestions = _get_category_suggestions(
                         title, body, keywords, exclude=category, limit=3
                     )
-                    
+
                     return {
                         "category": category,
                         "tags": validate_tags(tags),
@@ -1111,19 +1111,19 @@ def _categorize_by_keywords(
     if max(scores.values()) > 0:
         best = max(scores, key=scores.get)
         confidence = min(100, int(scores[best] * 15))  # Scale to 0-100
-        
+
         # Extract tags from matched keywords
         text_words = text.split()
         tags = [
             word for word in text_words
             if len(word) > 2 and word.isalnum()
         ][:5]
-        
+
         # Get suggestions
         suggestions = _get_category_suggestions(
             title, body, keywords, exclude=best, limit=3
         )
-        
+
         return {
             "category": best,
             "tags": validate_tags(tags),
@@ -1550,7 +1550,7 @@ For Raspberry Pi 5 or Linux servers:
    ```bash
    # View logs
    sudo journalctl -u wiki-notebook -f
-   
+
    # Health check
    curl http://localhost:5000/api/health
    ```
@@ -1594,7 +1594,7 @@ git commit -m "docs(deployment): add systemd service and self-hosted guide"
 
 ---
 
-Plan complete and saved to `docs/superpowers/plans/2026-04-21-audit-fixes-config-deployment.md`. 
+Plan complete and saved to `docs/superpowers/plans/2026-04-21-audit-fixes-config-deployment.md`.
 
 **Execution Options:**
 

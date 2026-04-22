@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from datetime import datetime
 from typing import Any
-
-import sqlite3
 
 from .models import Note, note_to_dict
 from .validation import validate_category, validate_tags
