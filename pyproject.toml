@@ -35,8 +35,15 @@ dev = [
     "isort>=5.0.0",
     "typeguard>=4.0.0",
     "pytest-playwright>=0.4.0",
+    "pre-commit>=4.0.0",
 ]
 
 # Build extras
 [tool.hatch.build.targets.sdist]
 packages = ["wiki_notebook"]
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 88

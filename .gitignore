@@ -26,6 +26,9 @@ htmlcov/
 .idea/
 .vscode/
 
+# Environment (secrets — .env.example is tracked)
+.env
+
 # Runtime / session state
 .remember/
 *.pid
