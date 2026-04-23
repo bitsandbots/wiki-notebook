@@ -24,7 +24,7 @@ class TestImportEndpoint:
         assert resp.status_code == 200
         result = resp.get_json()
         assert "chunks" in result
-        # Bodies < 10 chars are merged with preceding chunk
+        # Short bodies (< MIN_CHUNK_SIZE chars) are merged into the preceding chunk
         assert len(result["chunks"]) == 1
 
     def test_chunk_has_required_fields(self, client):
@@ -58,7 +58,7 @@ class TestImportEndpoint:
             ],
         )
         assert resp.status_code == 200
-        # Bodies < 10 chars are merged; so A+A merges to 1, B+C merges to 1 = 2 total
+        # Short bodies (< MIN_CHUNK_SIZE chars) are merged into the preceding chunk; so A+A merges to 1, B+C merges to 1 = 2 total
         assert len(resp.get_json()["chunks"]) == 2
 
     def test_multi_file_source_file_preserved(self, client):

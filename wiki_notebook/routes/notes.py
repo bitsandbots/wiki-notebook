@@ -38,16 +38,24 @@ def import_notes_route():
     if not files:
         return jsonify({"error": "No files uploaded"}), 400
 
+    MAX_IMPORT_BYTES = 5 * 1024 * 1024  # 5 MB per file
     chunks = []
     for file in files:
         raw_name = file.filename or "unknown"
         filename = secure_filename(raw_name)
+
+        if not filename:
+            continue  # filename sanitization removed all characters; skip this file
+
         ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
 
         if ext not in ("md", "txt"):
             continue
 
-        raw = file.read()
+        raw = file.read(MAX_IMPORT_BYTES + 1)
+        if len(raw) > MAX_IMPORT_BYTES:
+            return jsonify({"error": f"{filename} exceeds the 5 MB import limit"}), 400
+
         try:
             content = raw.decode("utf-8")
         except UnicodeDecodeError:
