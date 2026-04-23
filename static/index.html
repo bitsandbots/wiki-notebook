@@ -78,6 +78,56 @@
         />
       </div>
 
+      <div class="new-note-group" style="position: relative">
+        <button
+          type="button"
+          id="new-note-btn"
+          class="btn btn-primary btn-new-note"
+          aria-label="Create new note"
+        >
+          + New Note
+        </button>
+        <button
+          type="button"
+          id="new-note-caret"
+          class="btn btn-primary btn-new-note-caret"
+          aria-label="More creation options"
+          aria-expanded="false"
+          aria-haspopup="true"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               aria-hidden="true" width="12" height="12">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <ul
+          id="new-note-menu"
+          class="new-note-menu"
+          role="menu"
+          aria-label="Creation options"
+          style="display: none"
+        >
+          <li role="none">
+            <button
+              type="button"
+              id="import-file-btn"
+              class="new-note-menu-item"
+              role="menuitem"
+            >
+              Import from file…
+            </button>
+          </li>
+        </ul>
+        <input
+          type="file"
+          id="import-file-input"
+          accept=".txt,.md"
+          multiple
+          style="display: none"
+          aria-hidden="true"
+        />
+      </div>
+
       <div class="header-a11y-controls">
         <!-- Dark mode toggle -->
         <button
@@ -175,7 +225,34 @@
             id="editor-container"
             class="editor-container"
             aria-label="Note editor"
+            style="display: none"
           >
+            <div class="detail-topbar">
+              <button
+                type="button"
+                id="detail-back-btn"
+                class="btn btn-link detail-back"
+                aria-label="Back to notes list"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     aria-hidden="true" width="16" height="16">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                Notes
+              </button>
+              <button
+                type="button"
+                id="detail-close-btn"
+                class="btn btn-link detail-close"
+                aria-label="Close note"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     aria-hidden="true" width="16" height="16">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
             <!-- Title: shown as input in edit mode, as text in view mode -->
             <input
               type="text"
@@ -277,6 +354,38 @@
             </div>
             <div class="editor-shortcut" aria-hidden="true">
               Ctrl+Enter to save
+            </div>
+          </section>
+
+          <section
+            id="import-preview-container"
+            class="import-preview-container"
+            aria-label="Import preview"
+            style="display: none"
+          >
+            <div class="detail-topbar">
+              <button
+                type="button"
+                id="import-cancel-top-btn"
+                class="btn btn-link detail-back"
+                aria-label="Cancel import"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     aria-hidden="true" width="16" height="16">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                Cancel
+              </button>
+            </div>
+            <div id="import-preview-header" class="import-preview-header"></div>
+            <div id="import-chunk-list" class="import-chunk-list"></div>
+            <div class="import-preview-actions">
+              <button type="button" id="import-confirm-btn" class="btn btn-primary">
+                Import Selected
+              </button>
+              <button type="button" id="import-cancel-bottom-btn" class="btn btn-secondary">
+                Cancel
+              </button>
             </div>
           </section>
 
