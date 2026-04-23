@@ -173,9 +173,10 @@ class TestTinyChunkMerging:
         tiny_standalone = any(c.body.strip() == "Hi" for c in chunks)
         assert not tiny_standalone
 
-    def test_only_headings_no_body_returns_non_empty_chunks(self):
+    def test_only_headings_no_body_produces_no_chunks(self):
+        """Headings with no body content are filtered out entirely."""
         chunks = chunk_file(MD_ONLY_HEADINGS, "test.md")
-        assert all(c.body.strip() for c in chunks)
+        assert chunks == []
 
 
 # ── Empty / edge cases ─────────────────────────────────────────────────────

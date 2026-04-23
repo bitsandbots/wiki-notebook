@@ -6,6 +6,8 @@ import re
 from typing import NamedTuple
 
 MAX_CHUNK_SIZE = 2000
+# 10 preserves short-but-valid bodies (e.g. 24-char section content).
+# A value of 50 would merge semantically complete short sections into their predecessor.
 MIN_CHUNK_SIZE = 10
 
 
@@ -61,13 +63,15 @@ def _chunk_markdown(content: str, filename: str) -> list[Chunk]:
     return _finalize_chunks(pairs, filename)
 
 
-def _chunk_by_paragraphs(content: str, filename: str) -> list[Chunk]:
-    """Split on double newlines (blank lines). Falls back to word-boundary split."""
-    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", content) if p.strip()]
+def _group_paragraphs(paragraphs: list[str]) -> list[str]:
+    """Group paragraphs into chunks up to MAX_CHUNK_SIZE.
 
-    if not paragraphs:
-        return []
+    Args:
+        paragraphs: List of paragraph strings.
 
+    Returns:
+        List of grouped paragraph strings (multiple paragraphs joined by double newlines).
+    """
     groups: list[str] = []
     current: list[str] = []
     current_len = 0
@@ -84,6 +88,17 @@ def _chunk_by_paragraphs(content: str, filename: str) -> list[Chunk]:
     if current:
         groups.append("\n\n".join(current))
 
+    return groups
+
+
+def _chunk_by_paragraphs(content: str, filename: str) -> list[Chunk]:
+    """Split on double newlines (blank lines). Falls back to word-boundary split."""
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", content) if p.strip()]
+
+    if not paragraphs:
+        return []
+
+    groups = _group_paragraphs(paragraphs)
     pairs = [(f"{filename} - Part {i + 1}", g) for i, g in enumerate(groups)]
     return _finalize_chunks(pairs, filename)
 
@@ -125,20 +140,7 @@ def _sub_split(body: str) -> list[str]:
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
 
     if len(paragraphs) > 1:
-        groups: list[str] = []
-        current: list[str] = []
-        current_len = 0
-        for para in paragraphs:
-            if current and current_len + len(para) > MAX_CHUNK_SIZE:
-                groups.append("\n\n".join(current))
-                current = [para]
-                current_len = len(para)
-            else:
-                current.append(para)
-                current_len += len(para)
-        if current:
-            groups.append("\n\n".join(current))
-        return groups
+        return _group_paragraphs(paragraphs)
 
     result: list[str] = []
     remaining = body
