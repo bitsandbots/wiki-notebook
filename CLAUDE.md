@@ -35,7 +35,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Frontend Layer (static/)
 ├── index.html      - Main SPA entry point
 ├── styles.css      - Brand v2.1 Silver theme (CoreConduit)
-└── app.js          - Vanilla JS (no build step)
+└── app.js          - Vanilla JS, grid-first view state machine (no build step)
 
 Backend Layer (wiki_notebook/)
 ├── app.py          - Flask factory pattern
@@ -45,6 +45,7 @@ Backend Layer (wiki_notebook/)
 ├── models.py       - Data models (Note dataclass)
 ├── validation.py   - Input validation
 ├── search.py       - FTS5 search orchestration
+├── chunking.py     - Hybrid .txt/.md chunking algorithm (import)
 └── ai/             - Ollama integration
     ├── ollama_client.py
     ├── categorize.py
@@ -53,7 +54,7 @@ Backend Layer (wiki_notebook/)
 Routes (wiki_notebook/routes/)
 ├── __init__.py
 ├── health.py       - /api/health
-├── notes.py        - /api/notes/* (CRUD + combine + optimize)
+├── notes.py        - /api/notes/* (CRUD + combine + optimize + import)
 └── search.py       - /api/search
 ```
 
@@ -64,6 +65,7 @@ Routes (wiki_notebook/routes/)
 3. **Configuration Singleton** - `config.py` loads env vars once on import
 4. **Background Enrichment** - `EnrichmentWorker` processes notes async via queue
 5. **FTS5 Triggers** - Schema syncs search index automatically via SQLite triggers
+6. **View State Machine** - `state.view` (`"grid"` | `"detail"` | `"import-preview"`) drives `renderView()` in `app.js`
 
 ### Database Schema
 
@@ -82,6 +84,7 @@ Routes (wiki_notebook/routes/)
 | GET | `/api/notes/<id>` | Get note |
 | PUT | `/api/notes/<id>` | Update note |
 | DELETE | `/api/notes/<id>` | Delete note |
+| POST | `/api/notes/import` | Parse uploaded .txt/.md files into chunks (no notes created) |
 | POST | `/api/notes/combine` | Combine notes (concatenate or AI mode) |
 | POST | `/api/notes/<id>/optimize` | Optimize note with AI |
 | POST | `/api/notes/<id>/undo` | Undo last optimize |
