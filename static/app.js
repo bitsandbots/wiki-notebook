@@ -92,14 +92,42 @@ const state = {
   importChunks: [],     // proposed chunks from /api/notes/import
 };
 
-function updateNoteStats() {
+function updateNoteStats(autosaveStatus = "") {
   const statsEl = document.getElementById("note-stats");
   const bodyEl = document.getElementById("note-body");
   if (!statsEl || !bodyEl) return;
   const text = bodyEl.value;
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
   const chars = text.length;
-  statsEl.textContent = `${words.toLocaleString()} words · ${chars.toLocaleString()} chars`;
+  const countPart = `${words.toLocaleString()} words · ${chars.toLocaleString()} chars`;
+  statsEl.textContent = autosaveStatus ? `${countPart}  ${autosaveStatus}` : countPart;
+}
+
+let _autosaveTimer = null;
+
+function scheduleAutosave() {
+  // Only autosave existing notes (new notes need a manual first save)
+  if (!state.currentId) return;
+  clearTimeout(_autosaveTimer);
+  _autosaveTimer = setTimeout(autosave, 2000);
+}
+
+async function autosave() {
+  const titleEl = document.getElementById("note-title");
+  const bodyEl = document.getElementById("note-body");
+  const title = titleEl?.value?.trim();
+  const body = bodyEl?.value?.trim();
+  if (!title || !state.currentId || !state.hasUnsavedChanges) return;
+
+  updateNoteStats("Saving…");
+  try {
+    await api.update(state.currentId, { title, body, category: state.category, tags: [] });
+    state.hasUnsavedChanges = false;
+    updateNoteStats("Saved");
+    setTimeout(() => updateNoteStats(), 2000);
+  } catch {
+    updateNoteStats("Save failed");
+  }
 }
 
 function renderView() {
@@ -960,6 +988,7 @@ function init() {
     titleInput.addEventListener("input", () => {
       if (state.view === "detail" && !state.isPreviewMode) {
         state.hasUnsavedChanges = true;
+        scheduleAutosave();
       }
     });
   }
@@ -967,6 +996,7 @@ function init() {
     bodyTextarea.addEventListener("input", () => {
       if (state.view === "detail" && !state.isPreviewMode) {
         state.hasUnsavedChanges = true;
+        scheduleAutosave();
       }
       updateNoteStats();
     });
