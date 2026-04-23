@@ -5,7 +5,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from flask import Blueprint, current_app, jsonify, request
+from werkzeug.utils import secure_filename
 
+from ..chunking import chunk_file
 from ..config import config
 from ..db import get_conn
 from ..repository import (
@@ -27,6 +29,37 @@ from ..validation import (
 )
 
 notes_bp = Blueprint("notes", __name__, url_prefix="/api/notes")
+
+
+@notes_bp.route("/import", methods=["POST"])
+def import_notes_route():
+    """Parse uploaded files and return proposed chunks without creating notes."""
+    files = request.files.getlist("files")
+    if not files:
+        return jsonify({"error": "No files uploaded"}), 400
+
+    chunks = []
+    for file in files:
+        raw_name = file.filename or "unknown"
+        filename = secure_filename(raw_name)
+        ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+        if ext not in ("md", "txt"):
+            continue
+
+        raw = file.read()
+        try:
+            content = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            content = raw.decode("latin-1", errors="replace")
+
+        file_chunks = chunk_file(content, filename)
+        chunks.extend([c._asdict() for c in file_chunks])
+
+    if not chunks:
+        return jsonify({"error": "No valid .txt or .md files found"}), 400
+
+    return jsonify({"chunks": chunks}), 200
 
 
 def _is_user_supplied_category(payload: dict) -> bool:
