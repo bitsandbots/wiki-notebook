@@ -512,3 +512,52 @@ def categorize_note_route(id: int) -> tuple:
             )
     finally:
         conn.close()
+
+
+@notes_bp.route("/suggest-title", methods=["POST"])
+def suggest_title_route() -> tuple:
+    """Suggest a title for a chunk of text using Ollama.
+
+    Accepts raw body text and returns a short, descriptive title.
+    Used by the import preview to auto-title unsaved chunks.
+
+    Returns:
+        {"title": "..."} (200) or {"error": {...}} (4xx/5xx)
+    """
+    data = request.get_json(silent=True) or {}
+    body = (data.get("body") or "").strip()
+    if not body:
+        return (
+            jsonify({"error": {"code": "missing_body", "message": "body is required"}}),
+            400,
+        )
+
+    from ..ai.ollama_client import OllamaClient, OllamaError
+
+    client = OllamaClient()
+    if not client.is_available():
+        return (
+            jsonify(
+                {
+                    "error": {
+                        "code": "ollama_unavailable",
+                        "message": "Ollama is not available",
+                    }
+                }
+            ),
+            503,
+        )
+
+    prompt = (
+        "Write a short, descriptive title (5 words or fewer) for the following text. "
+        "Reply with only the title, no punctuation at the end, no quotes.\n\n"
+        f"{body[:500]}"
+    )
+    try:
+        title = client.generate(prompt).strip().strip('"').strip("'")
+        return jsonify({"title": title})
+    except OllamaError as e:
+        return (
+            jsonify({"error": {"code": "ollama_error", "message": str(e)}}),
+            502,
+        )

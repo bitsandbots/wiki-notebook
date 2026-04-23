@@ -752,6 +752,14 @@ a:hover {
   border-color: var(--cc-blue-500);
   box-shadow: 0 0 0 3px var(--cc-blue-glow);
 }
+.note-stats {
+  font-family: var(--cc-font-mono);
+  font-size: 0.65rem;
+  color: var(--cc-text-faint);
+  text-align: right;
+  margin-top: 0.25rem;
+  min-height: 1em;
+}
 
 .editor-actions {
   display: flex;
@@ -1343,6 +1351,42 @@ a:hover {
   color: var(--cc-text-faint);
   display: block;
   text-align: right;
+}
+
+.import-chunk-drag-handle {
+  display: block;
+  text-align: center;
+  color: var(--cc-text-faint);
+  font-size: 1rem;
+  cursor: grab;
+  user-select: none;
+  padding: 0.1rem 0;
+}
+.import-chunk-drag-handle:active {
+  cursor: grabbing;
+}
+
+.import-chunk-card.dragging {
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+.import-chunk-suggest-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--cc-blue-500);
+  font-size: 0.85rem;
+  padding: 0 0.3rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.import-chunk-suggest-btn:hover {
+  color: var(--cc-orange-500);
+}
+.import-chunk-suggest-btn:disabled {
+  color: var(--cc-text-faint);
+  cursor: wait;
 }
 
 .import-preview-actions {

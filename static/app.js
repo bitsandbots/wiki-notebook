@@ -87,9 +87,20 @@ const state = {
   editing: false,
   isPreviewMode: false, // true = viewing rendered markdown, false = editing
   view: "grid",         // "grid" | "detail" | "import-preview"
+  gridScrollY: 0,       // saved scroll position for grid restore
   hasUnsavedChanges: false,
   importChunks: [],     // proposed chunks from /api/notes/import
 };
+
+function updateNoteStats() {
+  const statsEl = document.getElementById("note-stats");
+  const bodyEl = document.getElementById("note-body");
+  if (!statsEl || !bodyEl) return;
+  const text = bodyEl.value;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const chars = text.length;
+  statsEl.textContent = `${words.toLocaleString()} words · ${chars.toLocaleString()} chars`;
+}
 
 function renderView() {
   const gridEl = document.getElementById("notes-list-container");
@@ -109,13 +120,20 @@ function confirmLeaveEdit() {
 }
 
 function navigateTo(view) {
+  if (view !== "grid") {
+    state.gridScrollY = window.scrollY;
+  }
   state.view = view;
   if (view === "grid") {
     state.currentId = null;
     state.hasUnsavedChanges = false;
     renderApp();
+    renderView();
+    window.scrollTo({ top: state.gridScrollY, behavior: "instant" });
+  } else {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    renderView();
   }
-  renderView();
 }
 
 async function uploadForChunking(files) {
@@ -169,6 +187,13 @@ function renderImportPreview(data, files) {
       const card = document.createElement("div");
       card.className = "import-chunk-card";
       card.dataset.chunkIndex = chunk.index;
+      card.draggable = true;
+
+      // Drag handle
+      const dragHandle = document.createElement("span");
+      dragHandle.className = "import-chunk-drag-handle";
+      dragHandle.textContent = "⠿";
+      dragHandle.setAttribute("aria-hidden", "true");
 
       const label = document.createElement("label");
       label.className = "import-chunk-label";
@@ -186,8 +211,42 @@ function renderImportPreview(data, files) {
       titleInput.dataset.chunkIndex = chunk.index;
       titleInput.setAttribute("aria-label", "Chunk title");
 
+      // AI suggest button
+      const suggestBtn = document.createElement("button");
+      suggestBtn.type = "button";
+      suggestBtn.className = "import-chunk-suggest-btn";
+      suggestBtn.textContent = "✦";
+      suggestBtn.title = "Suggest title with AI";
+      suggestBtn.setAttribute("aria-label", "Suggest title with AI");
+      suggestBtn.addEventListener("click", async () => {
+        suggestBtn.disabled = true;
+        suggestBtn.textContent = "…";
+        try {
+          const res = await fetch("/api/notes/suggest-title", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ body: chunk.body }),
+          });
+          const json = await res.json();
+          if (res.ok && json.title) {
+            titleInput.value = json.title;
+            // Sync back to state so confirm-import uses the new title
+            const idx = state.importChunks.findIndex((c) => c.index === chunk.index);
+            if (idx !== -1) state.importChunks[idx].title = json.title;
+          } else {
+            suggestBtn.title = json.error?.message || "AI unavailable";
+          }
+        } catch {
+          suggestBtn.title = "Request failed";
+        } finally {
+          suggestBtn.disabled = false;
+          suggestBtn.textContent = "✦";
+        }
+      });
+
       label.appendChild(checkbox);
       label.appendChild(titleInput);
+      label.appendChild(suggestBtn);
 
       const preview = document.createElement("p");
       preview.className = "import-chunk-preview";
@@ -197,12 +256,39 @@ function renderImportPreview(data, files) {
       charCount.className = "import-chunk-charcount";
       charCount.textContent = `${chunk.body.length} chars`;
 
+      card.appendChild(dragHandle);
       card.appendChild(label);
       card.appendChild(preview);
       card.appendChild(charCount);
       listEl.appendChild(card);
     }
   }
+
+  // Drag-to-reorder
+  let dragSrc = null;
+  listEl.addEventListener("dragstart", (e) => {
+    dragSrc = e.target.closest(".import-chunk-card");
+    if (dragSrc) dragSrc.classList.add("dragging");
+  });
+  listEl.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    const target = e.target.closest(".import-chunk-card");
+    if (!target || target === dragSrc) return;
+    const rect = target.getBoundingClientRect();
+    const after = e.clientY > rect.top + rect.height / 2;
+    listEl.insertBefore(dragSrc, after ? target.nextSibling : target);
+  });
+  listEl.addEventListener("dragend", () => {
+    if (dragSrc) dragSrc.classList.remove("dragging");
+    // Sync state.importChunks order to match DOM
+    const newOrder = [...listEl.querySelectorAll(".import-chunk-card")].map((el) =>
+      parseInt(el.dataset.chunkIndex)
+    );
+    state.importChunks.sort(
+      (a, b) => newOrder.indexOf(a.index) - newOrder.indexOf(b.index)
+    );
+    dragSrc = null;
+  });
 
   navigateTo("import-preview");
 }
@@ -415,7 +501,7 @@ function renderNotes(notes, isSearch = false) {
             </label>`
         : "";
 
-      return `<li class="note-card ${isSelected ? "selected" : ""}" data-id="${note.id}" role="listitem">
+      return `<li class="note-card ${isSelected ? "selected" : ""}" data-id="${note.id}" role="listitem" tabindex="0">
             <article>
                 ${checkboxHtml}
                 <div class="note-card-header">
@@ -611,6 +697,7 @@ function editNote(id) {
 
     titleEl.value = note.title;
     bodyEl.value = note.body;
+    updateNoteStats();
 
     if (deleteBtn) deleteBtn.style.display = "inline-block";
     // Show undo button if note has been optimized (has optimized_at)
@@ -648,6 +735,7 @@ function viewNote(id) {
 
     titleEl.value = note.title;
     bodyEl.value = note.body;
+    updateNoteStats();
 
     if (deleteBtn) deleteBtn.style.display = "inline-block";
     if (undoBtn && note.optimized_at) {
@@ -687,6 +775,7 @@ function switchToEditMode() {
     titleEl.readOnly = false;
   }
   if (titleDisplay) titleDisplay.style.display = "none";
+  if (titleEl) titleEl.focus();
 }
 
 /**
@@ -845,6 +934,18 @@ function init() {
     }
   });
 
+  // Keyboard activation for focused note cards (Enter/Space)
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const noteCard = document.activeElement?.closest(".note-card");
+    if (!noteCard) return;
+    // Don't intercept keys on interactive children (checkbox, button, textarea)
+    const tag = document.activeElement.tagName;
+    if (tag === "INPUT" || tag === "BUTTON" || tag === "TEXTAREA") return;
+    e.preventDefault();
+    viewNote(parseInt(noteCard.dataset.id));
+  });
+
   const searchInput = document.getElementById("search-input");
   if (searchInput) {
     searchInput.addEventListener("input", debounce(handleSearchInput, 200));
@@ -867,6 +968,7 @@ function init() {
       if (state.view === "detail" && !state.isPreviewMode) {
         state.hasUnsavedChanges = true;
       }
+      updateNoteStats();
     });
   }
 
