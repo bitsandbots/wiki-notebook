@@ -743,6 +743,54 @@ function init() {
     if (confirmLeaveEdit()) navigateTo("grid");
   });
 
+  // New Note button
+  document.getElementById("new-note-btn")?.addEventListener("click", () => {
+    state.currentId = null;
+    state.hasUnsavedChanges = false;
+    const ids = [
+      "note-title", "note-body", "delete-btn", "undo-btn",
+      "categorize-btn", "editor-category-section", "editor-enrichment-pending",
+    ];
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      if (id === "note-title" || id === "note-body") {
+        el.value = "";
+      } else {
+        el.style.display = "none";
+      }
+    }
+    switchToEditMode();
+    navigateTo("detail");
+  });
+
+  // Dropdown caret
+  const caretBtn = document.getElementById("new-note-caret");
+  const noteMenu = document.getElementById("new-note-menu");
+  if (caretBtn && noteMenu) {
+    caretBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = noteMenu.style.display !== "none";
+      noteMenu.style.display = isOpen ? "none" : "block";
+      caretBtn.setAttribute("aria-expanded", isOpen ? "false" : "true");
+    });
+    document.addEventListener("click", () => {
+      if (noteMenu.style.display !== "none") {
+        noteMenu.style.display = "none";
+        caretBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+
+  // Import menu item — open file picker
+  document.getElementById("import-file-btn")?.addEventListener("click", () => {
+    if (noteMenu) {
+      noteMenu.style.display = "none";
+      caretBtn?.setAttribute("aria-expanded", "false");
+    }
+    document.getElementById("import-file-input")?.click();
+  });
+
   // Save button
   document.getElementById("save-btn")?.addEventListener("click", handleSave);
 
