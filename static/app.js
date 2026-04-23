@@ -118,6 +118,141 @@ function navigateTo(view) {
   renderView();
 }
 
+async function uploadForChunking(files) {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("files", file);
+  }
+  const response = await fetch("/api/notes/import", {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || "Import failed");
+  }
+  return response.json();
+}
+
+function renderImportPreview(data, files) {
+  state.importChunks = data.chunks;
+
+  const headerEl = document.getElementById("import-preview-header");
+  const listEl = document.getElementById("import-chunk-list");
+  if (!headerEl || !listEl) return;
+
+  headerEl.replaceChildren();
+  const heading = document.createElement("h2");
+  heading.className = "section-title";
+  const fileNames = [...files].map((f) => f.name).join(", ");
+  heading.textContent = `Import Preview — ${fileNames} (${data.chunks.length} chunk${data.chunks.length !== 1 ? "s" : ""})`;
+  headerEl.appendChild(heading);
+
+  listEl.replaceChildren();
+
+  const groups = {};
+  for (const chunk of data.chunks) {
+    if (!groups[chunk.source_file]) groups[chunk.source_file] = [];
+    groups[chunk.source_file].push(chunk);
+  }
+
+  const fileCount = Object.keys(groups).length;
+  for (const [sourceFile, chunks] of Object.entries(groups)) {
+    if (fileCount > 1) {
+      const subheading = document.createElement("h3");
+      subheading.className = "import-source-heading";
+      subheading.textContent = sourceFile;
+      listEl.appendChild(subheading);
+    }
+
+    for (const chunk of chunks) {
+      const card = document.createElement("div");
+      card.className = "import-chunk-card";
+      card.dataset.chunkIndex = chunk.index;
+
+      const label = document.createElement("label");
+      label.className = "import-chunk-label";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = true;
+      checkbox.dataset.chunkIndex = chunk.index;
+      checkbox.setAttribute("aria-label", `Include: ${chunk.title}`);
+
+      const titleInput = document.createElement("input");
+      titleInput.type = "text";
+      titleInput.className = "import-chunk-title";
+      titleInput.value = chunk.title;
+      titleInput.dataset.chunkIndex = chunk.index;
+      titleInput.setAttribute("aria-label", "Chunk title");
+
+      label.appendChild(checkbox);
+      label.appendChild(titleInput);
+
+      const preview = document.createElement("p");
+      preview.className = "import-chunk-preview";
+      preview.textContent = chunk.body.substring(0, 200);
+
+      const charCount = document.createElement("span");
+      charCount.className = "import-chunk-charcount";
+      charCount.textContent = `${chunk.body.length} chars`;
+
+      card.appendChild(label);
+      card.appendChild(preview);
+      card.appendChild(charCount);
+      listEl.appendChild(card);
+    }
+  }
+
+  navigateTo("import-preview");
+}
+
+async function handleImportSelected() {
+  const cards = document.querySelectorAll("#import-chunk-list .import-chunk-card");
+  const selected = [];
+
+  for (const card of cards) {
+    const idx = parseInt(card.dataset.chunkIndex, 10);
+    const checkbox = card.querySelector('input[type="checkbox"]');
+    if (!checkbox?.checked) continue;
+
+    const chunk = state.importChunks.find((c) => c.index === idx);
+    if (!chunk) continue;
+
+    const titleInput = card.querySelector(".import-chunk-title");
+    const title = titleInput?.value?.trim() || chunk.title;
+    selected.push({ title, body: chunk.body });
+  }
+
+  if (selected.length === 0) {
+    alert("No chunks selected.");
+    return;
+  }
+
+  const confirmBtn = document.getElementById("import-confirm-btn");
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "Importing\u2026";
+  }
+
+  try {
+    for (const note of selected) {
+      await api.create({ title: note.title, body: note.body, tags: [] });
+    }
+    state.importChunks = [];
+    navigateTo("grid");
+    api.categories().then((data) => renderCategories(data.items, state.category));
+  } catch (err) {
+    console.error("Import error:", err);
+    alert("Import failed: " + (err.message || "Unknown error"));
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Import Selected";
+    }
+  }
+}
+
 // Debounce function
 function debounce(fn, delay) {
   let timeoutId;
@@ -791,6 +926,32 @@ function init() {
     document.getElementById("import-file-input")?.click();
   });
 
+  // File input change → upload and show preview
+  const fileInput = document.getElementById("import-file-input");
+  if (fileInput) {
+    fileInput.addEventListener("change", async () => {
+      const files = fileInput.files;
+      if (!files || files.length === 0) return;
+      try {
+        const data = await uploadForChunking(files);
+        renderImportPreview(data, files);
+      } catch (err) {
+        console.error("Import upload error:", err);
+        alert("Failed to parse files: " + (err.message || "Unknown error"));
+      }
+      fileInput.value = "";
+    });
+  }
+
+  document.getElementById("import-confirm-btn")?.addEventListener("click", handleImportSelected);
+
+  const cancelImport = () => {
+    state.importChunks = [];
+    navigateTo("grid");
+  };
+  document.getElementById("import-cancel-top-btn")?.addEventListener("click", cancelImport);
+  document.getElementById("import-cancel-bottom-btn")?.addEventListener("click", cancelImport);
+
   // Save button
   document.getElementById("save-btn")?.addEventListener("click", handleSave);
 
@@ -853,6 +1014,7 @@ window.viewNote = viewNote;
 window.api = api;
 window.state = state;
 window.navigateTo = navigateTo;
+window.handleImportSelected = handleImportSelected;
 
 // Start when DOM is ready
 if (document.readyState === "loading") {
