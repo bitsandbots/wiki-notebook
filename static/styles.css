@@ -1149,3 +1149,206 @@ a:hover {
     gap: 0.4rem;
   }
 }
+
+/* ── New Note button group ───────────────────────────────────────────────── */
+.new-note-group {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.btn-new-note {
+  border-radius: var(--cc-radius-sm) 0 0 var(--cc-radius-sm);
+  border-right: 1px solid var(--cc-blue-600);
+  white-space: nowrap;
+  font-size: 0.78rem;
+  padding: 0.4rem 0.85rem;
+  min-height: 36px;
+}
+
+.btn-new-note-caret {
+  border-radius: 0 var(--cc-radius-sm) var(--cc-radius-sm) 0;
+  padding: 0.4rem 0.55rem;
+  min-height: 36px;
+}
+
+.new-note-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 180px;
+  background: var(--cc-bg-elevated);
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius-sm);
+  box-shadow: var(--cc-shadow-elevated);
+  list-style: none;
+  z-index: 200;
+  padding: 0.25rem 0;
+  margin: 0;
+}
+
+.new-note-menu-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.6rem 1rem;
+  font-family: var(--cc-font-body);
+  font-size: 0.85rem;
+  color: var(--cc-text-primary);
+  cursor: pointer;
+  display: block;
+}
+
+.new-note-menu-item:hover {
+  background: var(--cc-blue-glow);
+  color: var(--cc-blue-600);
+}
+
+/* ── Detail view top bar ─────────────────────────────────────────────────── */
+.detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--cc-border-subtle);
+}
+
+.detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  padding: 0.3rem 0;
+  text-decoration: none;
+}
+
+.detail-back:hover {
+  text-decoration: none;
+}
+
+.detail-close {
+  padding: 0.3rem;
+  color: var(--cc-text-muted);
+  border: 1px solid transparent;
+  border-radius: var(--cc-radius-sm);
+  display: inline-flex;
+  align-items: center;
+}
+
+.detail-close:hover {
+  color: var(--cc-error);
+  border-color: var(--cc-border-subtle);
+  background: var(--cc-error-bg);
+  text-decoration: none;
+}
+
+/* ── Import preview ──────────────────────────────────────────────────────── */
+.import-preview-container {
+  background: var(--cc-bg-card);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: var(--cc-radius-md);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--cc-shadow-card);
+}
+
+.import-preview-header {
+  margin-bottom: 1rem;
+}
+
+.import-chunk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.import-source-heading {
+  font-family: var(--cc-font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cc-text-faint);
+  margin: 0.5rem 0 0.25rem;
+}
+
+.import-chunk-card {
+  background: var(--cc-bg-elevated);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: var(--cc-radius-sm);
+  padding: 0.75rem 1rem;
+  overflow: hidden;
+}
+
+.import-chunk-card::before {
+  content: "";
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, var(--cc-blue-500), var(--cc-orange-500));
+  margin: -0.75rem -1rem 0.75rem;
+}
+
+.import-chunk-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.import-chunk-label input[type="checkbox"] {
+  accent-color: var(--cc-blue-500);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.import-chunk-title {
+  flex: 1;
+  font-family: var(--cc-font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--cc-border-subtle);
+  color: var(--cc-text-primary);
+  padding: 0.15rem 0;
+  outline: none;
+}
+
+.import-chunk-title:focus {
+  border-bottom-color: var(--cc-blue-500);
+}
+
+.import-chunk-preview {
+  font-size: 0.8rem;
+  color: var(--cc-text-muted);
+  line-height: 1.5;
+  margin: 0.25rem 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.import-chunk-charcount {
+  font-family: var(--cc-font-mono);
+  font-size: 0.65rem;
+  color: var(--cc-text-faint);
+  display: block;
+  text-align: right;
+}
+
+.import-preview-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cc-border-subtle);
+}
