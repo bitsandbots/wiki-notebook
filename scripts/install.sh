@@ -29,6 +29,7 @@ log_error() {
 }
 
 echo "=== Wiki Notebook Installer ==="
+echo "Version: 0.3.0"
 echo ""
 
 # Check Python version
@@ -168,9 +169,9 @@ echo "Then open http://localhost:5000/"
 echo ""
 
 # Check for systemd service
-if [ -f "systemd/wiki-notebook.service" ]; then
+if [ -f ".github/wiki-notebook.service" ]; then
     echo "To run as a system service (optional):"
-    echo "  sudo cp systemd/wiki-notebook.service /etc/systemd/system/"
+    echo "  sudo cp .github/wiki-notebook.service /etc/systemd/system/"
     echo "  sudo systemctl daemon-reload"
     echo "  sudo systemctl enable wiki-notebook"
     echo "  sudo systemctl start wiki-notebook"

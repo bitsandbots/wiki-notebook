@@ -7,17 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-23
+
 ### Added
-- Multi-select functionality with checkboxes
-- Combine notes endpoint (concatenate and AI modes)
-- Optimize note endpoint with revision tracking
-- Undo optimize endpoint
+- **Grid-first UI** — notes grid is now the home view; clicking a note opens a full-page detail view
+- **View state machine** — `state.view` (`"grid"` | `"detail"` | `"import-preview"`) drives `renderView()`; `navigateTo()` is the only transition function
+- **File import** — upload `.txt`/`.md` files, preview and select chunks before creating notes; drag-to-reorder chunks
+- **AI chunk title suggestions** — `POST /api/notes/suggest-title` + ✦ button per import chunk
+- **Autosave** — debounced 2-second autosave for existing notes with inline status indicator
+- **Keyboard navigation** — note cards have `tabindex="0"`; Enter/Space activates the focused card
+- **Word & char count** — live count shown in editor status bar below textarea
+- **Scroll management** — detail view scrolls to top on open; grid restores scroll position on back
+- `chunking.py` — hybrid `.txt`/`.md` chunker (headings → paragraphs → word-boundary fallback, MIN_CHUNK_SIZE=10)
+- `/api/notes/import` — multipart upload endpoint (5 MB limit, `secure_filename` guard)
+- `/api/notes/suggest-title` — stateless Ollama title suggestion endpoint
 
 ### Changed
+- Title input auto-focused when switching to edit mode
+- Unsaved-changes guard (`confirmLeaveEdit()`) on all view transitions
+- Import preview route ordered before parametric routes in Flask blueprint
 
 ### Fixed
-
-### Removed
+- Note opening at top of page, out of view of scroll position
 
 ## [0.1.0] - 2026-04-16
 

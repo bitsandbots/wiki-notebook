@@ -1,4 +1,4 @@
-# API Reference - Wiki Notebook
+# API Reference — Wiki Notebook
 
 ## Base URL
 
@@ -6,19 +6,23 @@
 http://localhost:5000/api
 ```
 
-## Endpoints
+## Authentication
 
-### Health Check
+None required. This is a local, single-user application.
 
-#### `GET /api/health`
+---
 
-Check server health and status of dependent services.
+## Health
+
+### `GET /api/health`
+
+Check server and dependency status.
 
 **Response:**
 ```json
 {
   "status": "healthy",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "database": {
     "connected": true,
     "tables": ["notes", "notes_fts", "note_revisions"]
@@ -32,106 +36,151 @@ Check server health and status of dependent services.
 
 ---
 
-### Notes CRUD
+## Notes
 
-#### `GET /api/notes`
+### `GET /api/notes`
 
 List notes with pagination and filtering.
 
-**Query Parameters:**
-- `category` (optional) - Filter by category
-- `limit` (default: 50) - Max results
-- `offset` (default: 0) - Results to skip
-- `order` (default: "new") - "new" or "old"
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `category` | — | Filter by category |
+| `limit` | 50 | Max results |
+| `offset` | 0 | Results to skip |
+| `order` | `"new"` | `"new"` or `"old"` |
 
 **Response:**
 ```json
 {
-  "items": [
-    {
-      "id": 1,
-      "title": "Note Title",
-      "body": "Note content",
-      "category": "work",
-      "tags": ["tag1", "tag2"],
-      "created_at": "2024-01-01T00:00:00",
-      "updated_at": "2024-01-01T00:00:00",
-      "enrichment_pending": false
-    }
-  ],
-  "total": 1,
+  "items": [...],
+  "total": 42,
   "limit": 50,
   "offset": 0
 }
 ```
 
-#### `POST /api/notes`
+### `POST /api/notes`
 
-Create a new note.
+Create a note. Triggers background AI categorization.
 
-**Request Body:**
+**Body:**
 ```json
 {
   "title": "Note Title",
-  "body": "Note content",
+  "body": "Content",
   "category": "work",
-  "tags": ["tag1", "tag2"]
+  "tags": ["tag1"]
 }
 ```
 
-**Response:** `201 Created`
+**Response:** `201 Created` — note object.
 
-#### `GET /api/notes/<id>`
+### `GET /api/notes/<id>`
 
-Get a specific note.
+Get a single note.
 
-**Response:**
-```json
-{
-  "id": 1,
-  "title": "Note Title",
-  "body": "Note content",
-  "category": "work",
-  "tags": ["tag1", "tag2"],
-  "created_at": "2024-01-01T00:00:00",
-  "updated_at": "2024-01-01T00:00:00",
-  "optimized_at": "2024-01-01T00:00:00"
-}
-```
-
-#### `PUT /api/notes/<id>`
+### `PUT /api/notes/<id>`
 
 Update a note.
 
-**Request Body:**
-```json
-{
-  "title": "Updated Title",
-  "body": "Updated content"
-}
-```
+**Body:** Same shape as POST (all fields optional).
 
-**Response:** `200 OK`
+**Response:** `200 OK` — updated note object.
 
-#### `DELETE /api/notes/<id>`
+### `DELETE /api/notes/<id>`
 
-Delete a note.
+Delete a note permanently.
 
 **Response:** `204 No Content`
 
 ---
 
-### Search
+## Import
 
-#### `GET /api/search`
+### `POST /api/notes/import`
 
-Search notes using FTS5 with BM25 ranking.
+Parse one or more uploaded `.txt`/`.md` files into proposed chunks. **Does not create notes.** The client reviews and confirms chunks via the import preview UI.
 
-**Query Parameters:**
-- `q` (required) - Search query
-- `category` (optional) - Filter by category
-- `limit` (default: 50) - Max results
-- `offset` (default: 0) - Results to skip
+**Request:** `multipart/form-data`
+
+- `files` — one or more `.txt` or `.md` files (max 5 MB each)
+
+**Response:**
+```json
+{
+  "chunks": [
+    {
+      "index": 0,
+      "title": "Section Title",
+      "body": "Section content…",
+      "source_file": "notes.md"
+    }
+  ],
+  "file_count": 1,
+  "chunk_count": 4
+}
+```
+
+**Errors:**
+- `400` — no files, unsupported extension
+- `413` — file exceeds 5 MB limit
+
+### `POST /api/notes/suggest-title`
+
+Suggest a short title for a chunk of text using Ollama. Used by the import preview "✦" button. Stateless — does not persist anything.
+
+**Body:**
+```json
+{ "body": "Text to title…" }
+```
+
+**Response:**
+```json
+{ "title": "Suggested Title" }
+```
+
+**Errors:**
+- `400` — missing body
+- `503` — Ollama not reachable
+- `502` — Ollama returned an error
+
+---
+
+## Combine
+
+### `POST /api/notes/combine`
+
+Combine multiple notes into a new note.
+
+**Body:**
+```json
+{
+  "note_ids": [1, 2, 3],
+  "mode": "concatenate",
+  "title": "Combined Note"
+}
+```
+
+**Modes:**
+- `concatenate` — merge with section headers
+- `ai` — AI synthesis (requires Ollama)
+
+**Response:** `201 Created` — new combined note.
+
+---
+
+## Search
+
+### `GET /api/search`
+
+Full-text search using FTS5 with BM25 ranking.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `q` | (required) | Search query |
+| `category` | — | Filter by category |
+| `limit` | 50 | Max results |
+| `offset` | 0 | Skip |
 
 **Response:**
 ```json
@@ -140,23 +189,18 @@ Search notes using FTS5 with BM25 ranking.
     {
       "id": 1,
       "title": "Note Title",
-      "body": "Note content",
-      "category": "work",
-      "tags": ["tag1"],
-      "score": 0.85,
-      "snippet": "...<mark>search</mark> result..."
+      "snippet": "…highlighted <mark>term</mark>…",
+      "score": 0.85
     }
   ],
-  "total": 1,
-  "limit": 50,
-  "offset": 0,
-  "q": "search query"
+  "total": 3,
+  "q": "search term"
 }
 ```
 
-#### `GET /api/categories`
+### `GET /api/categories`
 
-List all categories with note counts.
+List categories with note counts.
 
 **Response:**
 ```json
@@ -170,36 +214,13 @@ List all categories with note counts.
 
 ---
 
-### Multi-Select Operations
+## AI Operations
 
-#### `POST /api/notes/combine`
+### `POST /api/notes/<id>/optimize`
 
-Combine multiple notes into a new note.
+Rewrite a note's content with AI. Saves a revision for undo.
 
-**Request Body:**
-```json
-{
-  "note_ids": [1, 2, 3],
-  "mode": "concatenate",
-  "title": "Combined Note"
-}
-```
-
-**Modes:**
-- `concatenate` - Simple merge with headers
-- `ai` - Placeholder for AI synthesis
-
-**Response:** `201 Created`
-
----
-
-### Optimization
-
-#### `POST /api/notes/<id>/optimize`
-
-Optimize a note (save revision and update content).
-
-**Request Body:**
+**Body:**
 ```json
 {
   "title": "Improved Title",
@@ -207,13 +228,19 @@ Optimize a note (save revision and update content).
 }
 ```
 
-**Response:** `200 OK`
+**Response:** `200 OK` — updated note.
 
-#### `POST /api/notes/<id>/undo`
+### `POST /api/notes/<id>/undo`
 
-Undo the last optimization by restoring the previous revision.
+Restore the note to its state before the last optimize.
 
-**Response:** `200 OK`
+**Response:** `200 OK` — restored note.
+
+### `POST /api/notes/<id>/categorize`
+
+Manually re-run categorization on a note.
+
+**Response:** `200 OK` — note with updated `category` and `tags`.
 
 ---
 
@@ -224,34 +251,19 @@ Undo the last optimization by restoring the previous revision.
 ```typescript
 interface Note {
   id: number;
-  title: string;        // 1-200 characters
-  body: string;         // Required, stripped
-  category: string;     // 0-50 characters, optional
-  tags: string[];       // 1-30 chars each, max 20
-  created_at: string;   // ISO 8601
-  updated_at: string;   // ISO 8601
-  optimized_at?: string; // ISO 8601, when last optimized
-  source_ids?: number[]; // For combined notes
-}
-```
-
-### Search Result
-
-```typescript
-interface SearchResult {
-  id: number;
-  title: string;
+  title: string;         // 1–200 characters
   body: string;
-  category: string;
-  tags: string[];
-  score: number;        // BM25 relevance score
-  snippet: string;      // Highlighted snippet
+  category: string;      // 0–50 characters
+  tags: string[];        // each 1–30 chars, max 20
+  created_at: string;    // ISO 8601
+  updated_at: string;    // ISO 8601
+  optimized_at?: string; // set after optimize
+  enrichment_pending: boolean;
+  source_ids?: number[]; // for combined notes
 }
 ```
 
 ## Error Responses
-
-### Validation Error (422)
 
 ```json
 {
@@ -262,32 +274,4 @@ interface SearchResult {
 }
 ```
 
-### Not Found (404)
-
-```json
-{
-  "error": {
-    "code": "not_found",
-    "message": "note not found"
-  }
-}
-```
-
-### Internal Server Error (500)
-
-```json
-{
-  "error": {
-    "code": "internal_server_error",
-    "message": "An unexpected error occurred"
-  }
-}
-```
-
-## Authentication
-
-**No authentication required.** This is a local, single-user application.
-
-## Rate Limiting
-
-**No rate limiting.** This is a local application.
+Common codes: `validation_failed` (422), `not_found` (404), `missing_body` (400), `ollama_unavailable` (503), `internal_server_error` (500).

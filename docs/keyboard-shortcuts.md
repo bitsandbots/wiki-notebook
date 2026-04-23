@@ -1,73 +1,39 @@
 # Keyboard Shortcuts
 
-This document describes all keyboard shortcuts available in Wiki Notebook.
+## Global
 
-## Global Shortcuts
+| Key | Action |
+|-----|--------|
+| `/` | Focus search input (from anywhere) |
+| `Esc` | Clear search / return to grid / close detail |
 
-### Search
-| Shortcut | Action |
-|----------|--------|
-| `/` | Focus the search input field (available from anywhere in the app) |
+## Grid View
 
-### Editor
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+Enter` | Save the current note (creates new or updates existing) |
-| `Esc` | Close editor or reset to new note state |
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Move focus between note cards |
+| `Enter` or `Space` | Open focused card in detail view |
 
-## Multi-Select Shortcuts
+## Detail View (Edit Mode)
 
-Wiki Notebook supports multi-select operations for power users:
+| Key | Action |
+|-----|--------|
+| `Ctrl+Enter` | Save note |
+| `Esc` | Return to grid (prompts if unsaved changes) |
 
-1. **Select Notes**: Click the checkbox next to any note card
-2. **Select Multiple**: Hold `Shift` and click to select a range, or click multiple checkboxes
-3. **Combine Selected Notes**: Click "Combine (concatenate)" or "Combine (AI)" in the action bar
-4. **Clear Selection**: Click "Clear" in the action bar
+## Notes
 
-## Editor Actions
+- **Autosave** — existing notes save automatically 2 seconds after you stop typing. The status bar below the editor shows `Saving…` / `Saved`.
+- **First save** — new notes still require a manual `Ctrl+Enter` or clicking Save (to set the title before autosave can run).
+- `Ctrl`/`Cmd` is handled automatically — use `Cmd` on macOS.
 
-| Action | Button | Shortcut |
-|--------|--------|----------|
-| Save Note | Save (primary) | `Ctrl+Enter` |
-| Preview Markdown | Preview (secondary) | N/A |
-| Delete Note | Delete (danger) | N/A |
-| Undo Optimization | Undo (link) | N/A |
+## Multi-Select
 
-## Navigation Shortcuts
-
-| Action | Description |
-|--------|-------------|
-| `Esc` in search | Clear search and reset view |
-| `Esc` in editor | Reset to new note (clears form) |
-| Category click | Filter by category |
-
-## System Behavior
-
-### Search
-- Typing `/` anywhere focuses the search input
-- Search debounce: 200ms for performance
-- FTS5-powered search for full-text queries
-- LIKE fallback for short queries (< 3 chars)
-
-### Editor
-- Auto-focuses when editing an existing note
-- Preserves category when editing from category view
-- Markdown preview toggles view mode
-
-### Multi-Select
-- Action bar appears at bottom when notes are selected
-- Shows count of selected notes
-- Combine requires 2+ notes
+1. Click a checkbox on any card to select it.
+2. Select multiple cards; the action bar appears at the bottom.
+3. Click **Combine** to merge selected notes.
+4. Click **Clear** or press `Esc` to deselect.
 
 ## Customization
 
-Keyboard shortcuts are implemented in vanilla JavaScript in `static/app.js`. To modify:
-
-1. Open `static/app.js`
-2. Find the `handleKeydown()` function
-3. Modify as needed (keep `Ctrl`/`Meta` check for cross-platform compatibility)
-
-## Platform Notes
-
-- **Linux/Windows**: Use `Ctrl` key
-- **macOS**: Use `Cmd` key (handled automatically by browser)
+Shortcuts live in `handleKeydown()` in `static/app.js`. Card keyboard activation is in the `keydown` delegation block immediately after the `click` delegation.
