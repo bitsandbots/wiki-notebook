@@ -86,7 +86,37 @@ const state = {
   selectedIds: new Set(),
   editing: false,
   isPreviewMode: false, // true = viewing rendered markdown, false = editing
+  view: "grid",         // "grid" | "detail" | "import-preview"
+  hasUnsavedChanges: false,
+  importChunks: [],     // proposed chunks from /api/notes/import
 };
+
+function renderView() {
+  const gridEl = document.getElementById("notes-list-container");
+  const detailEl = document.getElementById("editor-container");
+  const importEl = document.getElementById("import-preview-container");
+
+  if (gridEl) gridEl.style.display = state.view === "grid" ? "" : "none";
+  if (detailEl) detailEl.style.display = state.view === "detail" ? "" : "none";
+  if (importEl) importEl.style.display = state.view === "import-preview" ? "" : "none";
+}
+
+function confirmLeaveEdit() {
+  if (state.hasUnsavedChanges) {
+    return confirm("You have unsaved changes. Discard?");
+  }
+  return true;
+}
+
+function navigateTo(view) {
+  state.view = view;
+  if (view === "grid") {
+    state.currentId = null;
+    state.hasUnsavedChanges = false;
+    renderApp();
+  }
+  renderView();
+}
 
 // Debounce function
 function debounce(fn, delay) {
@@ -753,6 +783,7 @@ function init() {
     });
   }
 
+  renderView();
   console.log("Wiki Notebook initialized");
 }
 
@@ -762,6 +793,7 @@ window.editNote = editNote;
 window.viewNote = viewNote;
 window.api = api;
 window.state = state;
+window.navigateTo = navigateTo;
 
 // Start when DOM is ready
 if (document.readyState === "loading") {
