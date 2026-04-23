@@ -132,8 +132,8 @@ def app_page(page: Page, base_url: str) -> Page:
 
     page.goto(base_url)
 
-    # Wait for the page to load - check for editor container instead
-    page.wait_for_selector("#editor-container", timeout=10000)
+    # Wait for the page to load - grid is the default view
+    page.wait_for_selector("#notes-list-container", timeout=10000)
 
     # Wait a bit for JS to initialize
     page.wait_for_timeout(500)

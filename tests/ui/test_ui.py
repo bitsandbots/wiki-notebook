@@ -9,9 +9,9 @@ class TestPageLoad:
 
     def test_page_loads_successfully(self, app_page: Page):
         """Verify the main page loads without errors."""
-        # Check for critical page elements (use to_be_attached for elements that might be hidden)
-        expect(app_page.locator("#editor-container")).to_be_visible()
-        expect(app_page.locator("#notes-list")).to_be_attached()
+        # Grid view is the default — editor is hidden
+        expect(app_page.locator("#notes-list-container")).to_be_visible()
+        expect(app_page.locator("#editor-container")).not_to_be_visible()
         expect(app_page.locator("#category-list")).to_be_attached()
         expect(app_page.locator("#search-input")).to_be_visible()
 
@@ -28,14 +28,11 @@ class TestPageLoad:
         expect(skip_link).to_be_visible()
         expect(skip_link).to_have_attribute("href", "#main-content")
 
-    def test_initial_state_empty_editor(self, app_page: Page):
-        """Verify editor starts empty for new notes."""
-        title_input = app_page.locator("#note-title")
-        body_textarea = app_page.locator("#note-body")
-
-        expect(title_input).to_be_empty()
-        expect(body_textarea).to_be_empty()
-        expect(app_page.locator("#delete-btn")).not_to_be_visible()
+    def test_initial_state_shows_grid(self, app_page: Page):
+        """Grid is visible and editor is hidden on fresh load."""
+        expect(app_page.locator("#notes-list-container")).to_be_visible()
+        expect(app_page.locator("#editor-container")).not_to_be_visible()
+        expect(app_page.locator("#import-preview-container")).not_to_be_visible()
 
 
 class TestNoteViewMode:
@@ -156,27 +153,29 @@ class TestNoteCreation:
 
     def test_create_new_note(self, app_page: Page):
         """Create a new note and verify it appears in the list."""
-        # Fill in the editor
+        # Open the editor via New Note button (grid-first UI)
+        app_page.click("#new-note-btn")
+        app_page.wait_for_timeout(300)
+
         title_input = app_page.locator("#note-title")
         body_textarea = app_page.locator("#note-body")
 
-        test_title = f"Playwright Test Note"
+        test_title = "Playwright Test Note"
         test_body = "This is a test note created by Playwright."
 
         title_input.fill(test_title)
         body_textarea.fill(test_body)
 
-        # Handle the alert dialog
-        app_page.on("dialog", lambda dialog: dialog.accept())
-
-        # Save the note
+        # Save the note (no alert — save stays in detail/preview mode)
         save_button = app_page.locator("#save-btn")
         save_button.click()
+        app_page.wait_for_timeout(1000)
 
-        # Wait for save confirmation and page refresh
-        app_page.wait_for_timeout(1500)
+        # Navigate back to grid to verify note appears
+        app_page.click("#detail-back-btn")
+        app_page.wait_for_timeout(500)
 
-        # The new note should be at the top
+        # The new note should be in the list
         first_note_title = app_page.locator(".note-card .note-card-title").first
         expect(first_note_title).to_contain_text(test_title[:20])
 
@@ -358,3 +357,90 @@ class TestMultiSelect:
 
         # Action bar should hide
         expect(action_bar).not_to_be_visible()
+
+
+class TestGridFirstNavigation:
+    """Tests for the view-switching state machine."""
+
+    def test_new_note_opens_detail_edit(self, app_page: Page):
+        """+ New Note transitions to detail view in edit mode."""
+        app_page.click("#new-note-btn")
+        app_page.wait_for_timeout(300)
+        expect(app_page.locator("#editor-container")).to_be_visible()
+        expect(app_page.locator("#notes-list-container")).not_to_be_visible()
+        expect(app_page.locator("#note-body")).to_be_visible()
+
+    def test_new_note_fields_are_blank(self, app_page: Page):
+        """+ New Note opens with empty title and body."""
+        app_page.click("#new-note-btn")
+        app_page.wait_for_timeout(300)
+        expect(app_page.locator("#note-title")).to_be_empty()
+        expect(app_page.locator("#note-body")).to_be_empty()
+
+    def test_back_button_returns_to_grid(self, app_page: Page):
+        """Back button in detail view returns to grid."""
+        app_page.click("#new-note-btn")
+        app_page.wait_for_timeout(300)
+        app_page.click("#detail-back-btn")
+        app_page.wait_for_timeout(300)
+        expect(app_page.locator("#notes-list-container")).to_be_visible()
+        expect(app_page.locator("#editor-container")).not_to_be_visible()
+
+    def test_close_button_returns_to_grid(self, app_page: Page):
+        """X button in detail view returns to grid."""
+        app_page.click("#new-note-btn")
+        app_page.wait_for_timeout(300)
+        app_page.click("#detail-close-btn")
+        app_page.wait_for_timeout(300)
+        expect(app_page.locator("#notes-list-container")).to_be_visible()
+
+    def test_escape_from_preview_returns_to_grid(self, app_page: Page):
+        """Pressing Escape in preview mode returns to grid without dialog."""
+        app_page.wait_for_selector(".note-card", timeout=5000)
+        app_page.locator(".note-card").first.click(position={"x": 50, "y": 50})
+        app_page.wait_for_timeout(500)
+        expect(app_page.locator("#editor-container")).to_be_visible()
+        app_page.keyboard.press("Escape")
+        app_page.wait_for_timeout(300)
+        expect(app_page.locator("#notes-list-container")).to_be_visible()
+
+    def test_dropdown_caret_opens_menu(self, app_page: Page):
+        """Caret button reveals the import menu."""
+        expect(app_page.locator("#new-note-menu")).not_to_be_visible()
+        app_page.click("#new-note-caret")
+        app_page.wait_for_timeout(200)
+        expect(app_page.locator("#new-note-menu")).to_be_visible()
+
+    def test_dropdown_closes_on_outside_click(self, app_page: Page):
+        """Clicking outside closes the dropdown."""
+        app_page.click("#new-note-caret")
+        app_page.wait_for_timeout(200)
+        expect(app_page.locator("#new-note-menu")).to_be_visible()
+        app_page.locator(".site-logo").click()
+        app_page.wait_for_timeout(200)
+        expect(app_page.locator("#new-note-menu")).not_to_be_visible()
+
+
+class TestImportPreview:
+    """Tests for import preview view state."""
+
+    def test_import_preview_hidden_by_default(self, app_page: Page):
+        """Import preview is not visible on load."""
+        expect(app_page.locator("#import-preview-container")).not_to_be_visible()
+
+    def test_cancel_top_returns_to_grid(self, app_page: Page):
+        """Top cancel button returns to grid."""
+        app_page.evaluate("navigateTo('import-preview')")
+        app_page.wait_for_timeout(200)
+        expect(app_page.locator("#import-preview-container")).to_be_visible()
+        app_page.click("#import-cancel-top-btn")
+        app_page.wait_for_timeout(300)
+        expect(app_page.locator("#notes-list-container")).to_be_visible()
+
+    def test_cancel_bottom_returns_to_grid(self, app_page: Page):
+        """Bottom cancel button returns to grid."""
+        app_page.evaluate("navigateTo('import-preview')")
+        app_page.wait_for_timeout(200)
+        app_page.click("#import-cancel-bottom-btn")
+        app_page.wait_for_timeout(300)
+        expect(app_page.locator("#notes-list-container")).to_be_visible()
