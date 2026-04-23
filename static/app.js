@@ -387,12 +387,11 @@ function handleSave() {
   promise
     .then((note) => {
       state.currentId = note.id;
+      state.hasUnsavedChanges = false;
       renderApp();
-      // Clear search and refresh
-      api
-        .categories()
-        .then((data) => renderCategories(data.items, state.category));
-      alert("Note saved!");
+      api.categories().then((data) => renderCategories(data.items, state.category));
+      displayEditorCategory(note);
+      switchToPreviewMode();
     })
     .catch((err) => {
       console.error("Save error:", err);
@@ -410,12 +409,8 @@ function handleDelete() {
   if (!confirm("Delete this note?")) return;
 
   api.remove(state.currentId).then(() => {
-    state.currentId = null;
-    document.getElementById("note-title").value = "";
-    document.getElementById("note-body").value = "";
-    document.getElementById("delete-btn").style.display = "none";
-    document.getElementById("undo-btn").style.display = "none";
-    renderApp();
+    navigateTo("grid");
+    api.categories().then((data) => renderCategories(data.items, state.category));
   });
 }
 
@@ -494,12 +489,9 @@ function editNote(id) {
     displayEditorCategory(note);
 
     // Switch to edit mode
+    state.hasUnsavedChanges = false;
     switchToEditMode();
-
-    // Scroll to editor
-    document
-      .getElementById("editor-container")
-      ?.scrollIntoView({ behavior: "smooth" });
+    navigateTo("detail");
   });
 }
 
@@ -534,12 +526,9 @@ function viewNote(id) {
 
     // Switch to preview mode (rendered markdown)
     console.log("Switching to preview mode for:", note.title);
+    state.hasUnsavedChanges = false;
     switchToPreviewMode();
-
-    // Scroll to editor
-    document
-      .getElementById("editor-container")
-      ?.scrollIntoView({ behavior: "smooth" });
+    navigateTo("detail");
   });
 }
 
@@ -662,15 +651,10 @@ function handleKeydown(e) {
     if (searchInput?.value && searchInput === document.activeElement) {
       searchInput.value = "";
       renderApp();
-    } else if (state.currentId) {
-      // Reset to new note
-      state.currentId = null;
-      document.getElementById("note-title").value = "";
-      document.getElementById("note-body").value = "";
-      document.getElementById("delete-btn").style.display = "none";
-      document.getElementById("undo-btn").style.display = "none";
-      // Switch to edit mode for new note
-      switchToEditMode();
+    } else if (state.view === "detail") {
+      if (confirmLeaveEdit()) navigateTo("grid");
+    } else if (state.view === "import-preview") {
+      navigateTo("grid");
     }
   }
 }
@@ -733,6 +717,32 @@ function init() {
 
   document.addEventListener("keydown", handleKeydown);
 
+  // Track unsaved changes
+  const titleInput = document.getElementById("note-title");
+  const bodyTextarea = document.getElementById("note-body");
+  if (titleInput) {
+    titleInput.addEventListener("input", () => {
+      if (state.view === "detail" && !state.isPreviewMode) {
+        state.hasUnsavedChanges = true;
+      }
+    });
+  }
+  if (bodyTextarea) {
+    bodyTextarea.addEventListener("input", () => {
+      if (state.view === "detail" && !state.isPreviewMode) {
+        state.hasUnsavedChanges = true;
+      }
+    });
+  }
+
+  // Back and close buttons
+  document.getElementById("detail-back-btn")?.addEventListener("click", () => {
+    if (confirmLeaveEdit()) navigateTo("grid");
+  });
+  document.getElementById("detail-close-btn")?.addEventListener("click", () => {
+    if (confirmLeaveEdit()) navigateTo("grid");
+  });
+
   // Save button
   document.getElementById("save-btn")?.addEventListener("click", handleSave);
 
@@ -778,6 +788,7 @@ function init() {
       if (state.isPreviewMode) {
         switchToEditMode();
       } else {
+        state.hasUnsavedChanges = false;
         switchToPreviewMode();
       }
     });
