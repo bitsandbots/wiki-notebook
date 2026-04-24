@@ -565,9 +565,16 @@ function renderApp() {
   const query = searchInput ? searchInput.value : "";
 
   if (query) {
-    api.search({ q: query, category: state.category }).then((data) => {
-      renderNotes(data.items, true);
-    });
+    api
+      .search({ q: query, category: state.category })
+      .then((data) => {
+        if (data.error || !data.items) {
+          renderNotes([], true);
+          return;
+        }
+        renderNotes(data.items, true);
+      })
+      .catch(() => renderNotes([], true));
   } else {
     api.list({ category: state.category }).then((data) => {
       state.notes = data.items;

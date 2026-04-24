@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import sqlite3
 from typing import Any
@@ -103,7 +104,7 @@ def fts_search(
                 "title": row["title"],
                 "snippet": row["snippet"],
                 "category": row["category"],
-                "tags": row["tags"],
+                "tags": json.loads(row["tags"]) if row["tags"] else [],
                 "updated_at": row["updated_at"],
                 "score": row["score"],
             }
