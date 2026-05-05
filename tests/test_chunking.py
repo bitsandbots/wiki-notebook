@@ -182,6 +182,60 @@ class TestTinyChunkMerging:
 # ── Empty / edge cases ─────────────────────────────────────────────────────
 
 
+class TestHtmlChunking:
+    def test_returns_single_chunk(self):
+        html = "<html><body><h1>Title</h1><p>Content</p></body></html>"
+        chunks = chunk_file(html, "test.html")
+        assert len(chunks) == 1
+
+    def test_content_type_is_html(self):
+        html = "<html><body><h1>Title</h1><p>Content</p></body></html>"
+        chunks = chunk_file(html, "test.html")
+        assert chunks[0].content_type == "html"
+
+    def test_full_content_preserved(self):
+        html = "<html><body><h1>Title</h1><p>Content</p></body></html>"
+        chunks = chunk_file(html, "test.html")
+        assert chunks[0].body == html
+
+    def test_title_from_title_tag(self):
+        html = (
+            "<html><head><title>Page Title</title></head>"
+            "<body><p>Body</p></body></html>"
+        )
+        chunks = chunk_file(html, "test.html")
+        assert chunks[0].title == "Page Title"
+
+    def test_title_from_h1_fallback(self):
+        html = "<html><body><h1>Main Heading</h1><p>Body</p></body></html>"
+        chunks = chunk_file(html, "test.html")
+        assert chunks[0].title == "Main Heading"
+
+    def test_source_file_set(self):
+        html = "<p>Hello</p>"
+        chunks = chunk_file(html, "myfile.html")
+        assert chunks[0].source_file == "myfile.html"
+
+    def test_index_is_zero(self):
+        html = "<p>Hello</p>"
+        chunks = chunk_file(html, "myfile.html")
+        assert chunks[0].index == 0
+
+    def test_htm_extension_accepted(self):
+        html = "<html><body><h1>HTM File</h1></body></html>"
+        chunks = chunk_file(html, "test.htm")
+        assert len(chunks) == 1
+        assert chunks[0].content_type == "html"
+
+    def test_empty_html_returns_empty_list(self):
+        chunks = chunk_file("", "test.html")
+        assert chunks == []
+
+    def test_whitespace_only_html_returns_empty_list(self):
+        chunks = chunk_file("   \n\n   ", "test.html")
+        assert chunks == []
+
+
 class TestEdgeCases:
     def test_empty_file_returns_empty_list(self):
         chunks = chunk_file("", "test.md")

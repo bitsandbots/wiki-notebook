@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import datetime, timezone
 
 from flask import Blueprint, current_app, jsonify, request
@@ -49,7 +50,7 @@ def import_notes_route():
 
         ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
 
-        if ext not in ("md", "txt"):
+        if ext not in ("md", "txt", "html", "htm"):
             continue
 
         raw = file.read(MAX_IMPORT_BYTES + 1)
@@ -62,10 +63,10 @@ def import_notes_route():
             content = raw.decode("latin-1", errors="replace")
 
         file_chunks = chunk_file(content, filename)
-        chunks.extend([c._asdict() for c in file_chunks])
+        chunks.extend([asdict(c) for c in file_chunks])
 
     if not chunks:
-        return jsonify({"error": "No valid .txt or .md files found"}), 400
+        return jsonify({"error": "No valid .txt, .md, or .html files found"}), 400
 
     return jsonify({"chunks": chunks}), 200
 

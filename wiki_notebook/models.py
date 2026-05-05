@@ -21,6 +21,7 @@ class Note:
     updated_at: str
     optimized_at: str | None
     source_ids: list[int] | None
+    content_type: str = "markdown"
 
     @classmethod
     def from_row(cls, row: dict[str, Any]) -> "Note":
@@ -37,6 +38,7 @@ class Note:
             source_ids=(
                 json.loads(row.get("source_ids", "[]")) if row.get("source_ids") else []
             ),
+            content_type=row.get("content_type", "markdown"),
         )
 
 
@@ -52,4 +54,5 @@ def note_to_dict(note: Note) -> dict[str, Any]:
         "updated_at": note.updated_at,
         "optimized_at": note.optimized_at,
         "source_ids": note.source_ids,
+        "content_type": note.content_type,
     }

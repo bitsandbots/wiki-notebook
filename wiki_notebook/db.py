@@ -35,8 +35,24 @@ def init_db(db_path: str | None = None) -> None:
         with open(schema_path, "r") as f:
             schema_sql = f.read()
         conn.executescript(schema_sql)
+
+        # Idempotent column additions for existing databases.
+        # SQLite does not support ADD COLUMN IF NOT EXISTS, so catch errors
+        # when columns already exist.
+        for col_name, col_def in _MIGRATION_COLUMNS:
+            try:
+                conn.execute(f"ALTER TABLE notes ADD COLUMN {col_name} {col_def}")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
     finally:
         conn.close()
+
+
+# Columns added post-v0.2.0.  Each is added idempotently on init.
+_MIGRATION_COLUMNS = [
+    ("content_type", "TEXT NOT NULL DEFAULT 'markdown'"),
+    ("search_text", "TEXT"),
+]
 
 
 def check_schema(conn: sqlite3.Connection) -> None:

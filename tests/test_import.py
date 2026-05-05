@@ -99,3 +99,50 @@ class TestImportEndpoint:
         resp = _upload(client, [("unicode.md", md, "text/markdown")])
         assert resp.status_code == 200
         assert resp.get_json()["chunks"][0]["title"] == "Tïtle"
+
+
+class TestHtmlImport:
+    def test_html_file_returns_chunks(self, client):
+        html = b"<html><body><h1>Title</h1><p>Body text.</p></body></html>"
+        resp = _upload(client, [("page.html", html, "text/html")])
+        assert resp.status_code == 200
+        result = resp.get_json()
+        assert "chunks" in result
+        assert len(result["chunks"]) == 1
+
+    def test_html_chunk_has_content_type(self, client):
+        html = b"<html><body><h1>Title</h1><p>Body.</p></body></html>"
+        resp = _upload(client, [("page.html", html, "text/html")])
+        chunk = resp.get_json()["chunks"][0]
+        assert chunk["content_type"] == "html"
+
+    def test_html_chunk_preserves_tags(self, client):
+        html = b"<html><body><h1>Title</h1><p>Body.</p></body></html>"
+        resp = _upload(client, [("page.html", html, "text/html")])
+        chunk = resp.get_json()["chunks"][0]
+        assert "<h1>Title</h1>" in chunk["body"]
+        assert "<p>Body.</p>" in chunk["body"]
+
+    def test_html_chunk_title_from_title_tag(self, client):
+        html = (
+            b"<html><head><title>Page Title</title></head>"
+            b"<body><p>Body.</p></body></html>"
+        )
+        resp = _upload(client, [("page.html", html, "text/html")])
+        assert resp.get_json()["chunks"][0]["title"] == "Page Title"
+
+    def test_htm_extension_accepted(self, client):
+        html = b"<html><body><h1>HTM Test</h1><p>Body.</p></body></html>"
+        resp = _upload(client, [("page.htm", html, "text/html")])
+        assert resp.status_code == 200
+        assert resp.get_json()["chunks"][0]["content_type"] == "html"
+
+    def test_html_import_does_not_create_notes(self, client):
+        html = b"<html><body><h1>Title</h1><p>Body.</p></body></html>"
+        _upload(client, [("page.html", html, "text/html")])
+        list_resp = client.get("/api/notes")
+        assert list_resp.get_json()["total"] == 0
+
+    def test_empty_html_returns_400(self, client):
+        resp = _upload(client, [("empty.html", b"", "text/html")])
+        assert resp.status_code == 400

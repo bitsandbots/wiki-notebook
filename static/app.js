@@ -4,6 +4,18 @@
 const purify =
   typeof DOMPurify !== "undefined" ? DOMPurify : { sanitize: (html) => html };
 
+// Extended configuration for HTML notes — preserve formatting elements
+const purifyCfg = {
+  ALLOWED_ATTR: [
+    "style", "class", "id", "href", "src", "alt", "title",
+    "width", "height", "colspan", "rowspan", "target", "rel",
+  ],
+  ADD_TAGS: ["table", "thead", "tbody", "tfoot", "tr", "td", "th", "caption",
+    "colgroup", "col", "figure", "figcaption", "section", "article",
+    "header", "footer", "nav", "main", "aside"],
+  ALLOW_DATA_ATTR: false,
+};
+
 const api = {
   list: ({ category, limit, offset, order } = {}) => {
     const params = new URLSearchParams();
@@ -278,7 +290,12 @@ function renderImportPreview(data, files) {
 
       const preview = document.createElement("p");
       preview.className = "import-chunk-preview";
-      preview.textContent = chunk.body.substring(0, 200);
+      if (chunk.content_type === "html") {
+        const sanitized = purify.sanitize(chunk.body.substring(0, 500));
+        preview.innerHTML = sanitized;
+      } else {
+        preview.textContent = chunk.body.substring(0, 200);
+      }
 
       const charCount = document.createElement("span");
       charCount.className = "import-chunk-charcount";
@@ -335,7 +352,7 @@ async function handleImportSelected() {
 
     const titleInput = card.querySelector(".import-chunk-title");
     const title = titleInput?.value?.trim() || chunk.title;
-    selected.push({ title, body: chunk.body });
+    selected.push({ title, body: chunk.body, content_type: chunk.content_type });
   }
 
   if (selected.length === 0) {
@@ -351,7 +368,7 @@ async function handleImportSelected() {
 
   try {
     for (const note of selected) {
-      await api.create({ title: note.title, body: note.body, tags: [] });
+      await api.create({ title: note.title, body: note.body, tags: [], content_type: note.content_type });
     }
     state.importChunks = [];
     navigateTo("grid");
@@ -518,7 +535,9 @@ function renderNotes(notes, isSearch = false) {
       // Search results provide pre-formatted HTML snippets; regular cards render markdown
       const snippet = isSearch
         ? note.snippet || rawSnippet
-        : purify.sanitize(marked.parse(rawSnippet));
+        : note.content_type === "html"
+          ? purify.sanitize(rawSnippet, purifyCfg)
+          : purify.sanitize(marked.parse(rawSnippet));
       const formattedDate = formatDateTime(note.updated_at);
 
       const isSelected = state.selectedIds.has(note.id);
@@ -833,10 +852,11 @@ function switchToPreviewMode() {
     previewContainer = container;
   }
 
-  // Render markdown - sanitized by DOMPurify to prevent XSS
+  // Render body - bypass marked.parse for html notes
   const content = bodyEl?.value || "";
-  const html = marked.parse(content);
-  const sanitized = purify.sanitize(html);
+  const noteType = state.currentNote?.content_type;
+  const html = noteType === "html" ? content : marked.parse(content);
+  const sanitized = purify.sanitize(html, noteType === "html" ? purifyCfg : undefined);
   previewContainer.innerHTML = sanitized;
   previewContainer.style.display = "block";
   if (bodyEl) bodyEl.style.display = "none";

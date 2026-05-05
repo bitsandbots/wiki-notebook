@@ -7,6 +7,7 @@ import sqlite3
 from datetime import datetime
 from typing import Any
 
+from .html_utils import strip_html
 from .models import Note, note_to_dict
 from .validation import validate_category, validate_tags
 
@@ -47,7 +48,7 @@ def list_notes(
             order_clause = "updated_at DESC"
         cursor.execute(
             f"""SELECT id, title, body, category, tags, created_at,
-                   updated_at, optimized_at, source_ids
+                   updated_at, optimized_at, source_ids, content_type
             FROM notes
             WHERE category = ?
             ORDER BY {order_clause}
@@ -64,7 +65,7 @@ def list_notes(
             order_clause = "updated_at DESC"
         cursor.execute(
             f"""SELECT id, title, body, category, tags, created_at,
-                   updated_at, optimized_at, source_ids
+                   updated_at, optimized_at, source_ids, content_type
             FROM notes
             ORDER BY {order_clause}
             LIMIT ? OFFSET ?""",
@@ -90,7 +91,7 @@ def get_note(conn: sqlite3.Connection, note_id: int) -> dict[str, Any] | None:
     cursor = conn.cursor()
     cursor.execute(
         """SELECT id, title, body, category, tags, created_at,
-               updated_at, optimized_at, source_ids
+               updated_at, optimized_at, source_ids, content_type
         FROM notes WHERE id = ?""",
         (note_id,),
     )
@@ -105,7 +106,7 @@ def create_note(conn: sqlite3.Connection, payload: dict[str, Any]) -> dict[str, 
 
     Args:
         conn: Database connection
-        payload: Note data (title, body, category, tags)
+        payload: Note data (title, body, category, tags, content_type)
 
     Returns:
         Created note dict
@@ -115,12 +116,18 @@ def create_note(conn: sqlite3.Connection, payload: dict[str, Any]) -> dict[str, 
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "")
     tags_json = json.dumps(payload.get("tags", []))
     category = payload.get("category")
+    content_type = payload.get("content_type", "markdown")
+
+    # Strip HTML tags for FTS5 indexing
+    search_text = None
+    if content_type == "html":
+        search_text = strip_html(payload["body"])
 
     cursor = conn.cursor()
     cursor.execute(
         """INSERT INTO notes (title, body, category, tags,
-                             created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)""",
+                             created_at, updated_at, content_type, search_text)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             payload["title"],
             payload["body"],
@@ -128,6 +135,8 @@ def create_note(conn: sqlite3.Connection, payload: dict[str, Any]) -> dict[str, 
             tags_json,
             now,
             now,
+            content_type,
+            search_text,
         ),
     )
     note_id = cursor.lastrowid
@@ -165,6 +174,18 @@ def update_note(
     if "body" in payload:
         updates.append("body = ?")
         values.append(payload["body"])
+        # Recompute search_text for html notes
+        current = get_note(conn, note_id)
+        note_content_type = payload.get(
+            "content_type",
+            current.get("content_type", "markdown") if current else "markdown",
+        )
+        if note_content_type == "html":
+            updates.append("search_text = ?")
+            values.append(strip_html(payload["body"]))
+    if "content_type" in payload:
+        updates.append("content_type = ?")
+        values.append(payload["content_type"])
     if "category" in payload:
         updates.append("category = ?")
         values.append(payload["category"])
@@ -181,7 +202,14 @@ def update_note(
 
     # Validate payload fields to prevent SQL injection
     # Only allow known-safe fields
-    allowed_fields = {"title", "body", "category", "tags", "optimized_at"}
+    allowed_fields = {
+        "title",
+        "body",
+        "category",
+        "tags",
+        "optimized_at",
+        "content_type",
+    }
     if not updates:
         # No fields to update, return existing note
         return get_note(conn, note_id)
@@ -428,8 +456,8 @@ def combine_notes(
     cursor = conn.cursor()
     cursor.execute(
         """INSERT INTO notes (title, body, category, tags,
-                             created_at, updated_at, source_ids)
-         VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                             created_at, updated_at, source_ids, content_type)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             combined_title[:200],  # Title length limit
             combined_body,
@@ -438,6 +466,7 @@ def combine_notes(
             now,
             now,
             source_ids_json,
+            "markdown",
         ),
     )
     note_id = cursor.lastrowid

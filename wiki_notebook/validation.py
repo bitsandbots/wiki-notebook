@@ -135,11 +135,16 @@ def validate_create(payload: dict[str, Any]) -> dict[str, Any]:
     Raises:
         ValidationError: If validation fails
     """
+    content_type = payload.get("content_type", "markdown")
+    if content_type not in ("markdown", "html"):
+        content_type = "markdown"
+
     result = {
         "title": validate_title(payload.get("title", "")),
         "body": validate_body(payload.get("body", "")),
         "category": validate_category(payload.get("category")),
         "tags": validate_tags(payload.get("tags")),
+        "content_type": content_type,
     }
 
     # Set defaults for empty values

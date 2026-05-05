@@ -11,8 +11,18 @@ CREATE TABLE IF NOT EXISTS notes (
     created_at    TEXT NOT NULL,           -- ISO 8601
     updated_at    TEXT NOT NULL,
     optimized_at  TEXT,
-    source_ids    TEXT                     -- JSON array for combined notes
+    source_ids    TEXT,                    -- JSON array for combined notes
+    content_type  TEXT NOT NULL DEFAULT 'markdown',
+    search_text   TEXT                     -- Stripped text for FTS5 (html notes)
 );
+
+-- Add columns for existing databases (idempotent via error suppression)
+-- SQLite does not support ADD COLUMN IF NOT EXISTS, so catch the error.
+-- Using INSERT OR IGNORE into a pragma-based check is unreliable across
+-- SQLite versions. init_db() wraps this in a try/except, so these are
+-- safe to run unconditionally.
+-- The column additions below are intentionally left here for documentation;
+-- the idempotency is handled by the init_db migration logic.
 
 -- FTS5 virtual table for full-text search
 CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
@@ -21,22 +31,31 @@ CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
     tokenize='porter unicode61'
 );
 
--- Triggers to keep FTS5 in sync with notes table
+-- Triggers to keep FTS5 in sync with notes table.
+-- For body, use COALESCE(search_text, body): html notes store stripped text
+-- in search_text; markdown notes leave it NULL and index body directly.
+DROP TRIGGER IF EXISTS notes_ai;
 CREATE TRIGGER IF NOT EXISTS notes_ai AFTER INSERT ON notes BEGIN
     INSERT INTO notes_fts(rowid, title, body, category, tags)
-    VALUES (new.id, new.title, new.body, new.category, new.tags);
+    VALUES (new.id, new.title, COALESCE(new.search_text, new.body),
+            new.category, new.tags);
 END;
 
+DROP TRIGGER IF EXISTS notes_au;
 CREATE TRIGGER IF NOT EXISTS notes_au AFTER UPDATE ON notes BEGIN
     INSERT INTO notes_fts(notes_fts, rowid, title, body, category, tags)
-    VALUES ('delete', old.id, old.title, old.body, old.category, old.tags);
+    VALUES ('delete', old.id, old.title,
+            COALESCE(old.search_text, old.body), old.category, old.tags);
     INSERT INTO notes_fts(rowid, title, body, category, tags)
-    VALUES (new.id, new.title, new.body, new.category, new.tags);
+    VALUES (new.id, new.title, COALESCE(new.search_text, new.body),
+            new.category, new.tags);
 END;
 
+DROP TRIGGER IF EXISTS notes_ad;
 CREATE TRIGGER IF NOT EXISTS notes_ad AFTER DELETE ON notes BEGIN
     INSERT INTO notes_fts(notes_fts, rowid, title, body, category, tags)
-    VALUES ('delete', old.id, old.title, old.body, old.category, old.tags);
+    VALUES ('delete', old.id, old.title,
+            COALESCE(old.search_text, old.body), old.category, old.tags);
 END;
 
 -- Note revisions table for undo functionality
