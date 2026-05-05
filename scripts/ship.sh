@@ -154,12 +154,12 @@ log_info "Step 6/6: Creating release commit and tag…"
 if git tag -l | grep -q "^v${VERSION}$"; then
     log_warning "Tag v$VERSION already exists — skipping tag creation"
 elif [ "$DRY_RUN" == "true" ]; then
-    echo "  git add -A"
+    echo "  git add -u  # staged + tracked modifications"
     echo "  git commit -m 'release: v$VERSION'"
     echo "  git tag v$VERSION"
     log_success "(dry-run) Commit and tag would be created"
 else
-    git add -A
+    git add -u  # staged + tracked modifications only
     git commit -m "release: v$VERSION"
     git tag "v$VERSION"
     log_success "Commit: $(git rev-parse --short HEAD)  Tag: v$VERSION"
@@ -169,12 +169,12 @@ echo ""
 echo "=== Ship Workflow Complete ==="
 echo ""
 echo "Push to GitHub:"
-echo "  git push origin main && git push origin v$VERSION"
+echo "  git push origin ${CURRENT_BRANCH} && git push origin v$VERSION"
 echo ""
 
 if [ "$DEPLOY" == "true" ]; then
     echo "Deploy to server:"
-    echo "  ssh user@server 'cd /var/www/wiki-notebook && git pull && source .venv/bin/activate && pip install -e . && sudo systemctl restart wiki-notebook'"
+    echo "  ssh user@server 'cd /opt/wiki-notebook && sudo systemctl stop wiki-notebook && sudo -u wiki-notebook git pull && sudo -u wiki-notebook .venv/bin/pip install -e . && sudo systemctl start wiki-notebook'"
     echo ""
 fi
 

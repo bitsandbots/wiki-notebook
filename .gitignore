@@ -40,6 +40,9 @@ htmlcov/
 # Git worktrees
 worktrees/
 
+# MCP configuration
+.mcp.json
+
 # Temporary files
 handoff.md
 

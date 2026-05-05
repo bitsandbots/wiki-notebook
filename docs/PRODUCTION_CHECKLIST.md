@@ -4,7 +4,7 @@ Use this checklist to prepare for production deployment on Raspberry Pi or Linux
 
 ## Pre-Deployment Verification (Local)
 
-- [ ] **Tests Pass**: Run `pytest` — expect 143/143 passing
+- [ ] **Tests Pass**: Run `pytest` — expect 207/207 passing
 - [ ] **Code Quality**: No warnings from linters
 - [ ] **Security**: Run `black --check`, `isort --check`
 - [ ] **Feature Test**: Create note, categorize, verify confidence & suggestions
@@ -42,7 +42,7 @@ Use this checklist to prepare for production deployment on Raspberry Pi or Linux
 - [ ] Permissions set: `sudo chmod 600 /etc/wiki-notebook/config.env`
 
 ### Systemd Service
-- [ ] Service file copied: `sudo cp .github/wiki-notebook.service /etc/systemd/system/`
+- [ ] Service file copied: `sudo cp systemd/wiki-notebook.service /etc/systemd/system/`
 - [ ] Service file verified: `sudo systemd-analyze verify /etc/systemd/system/wiki-notebook.service`
 - [ ] Daemon reloaded: `sudo systemctl daemon-reload`
 - [ ] Service enabled: `sudo systemctl enable wiki-notebook`

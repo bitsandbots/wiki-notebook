@@ -192,6 +192,8 @@ results, total = fts_search(conn, query, limit=50)
 | `/api/notes/<id>/optimize` | POST | Optimize note |
 | `/api/notes/<id>/undo` | POST | Undo optimization |
 | `/api/notes/combine` | POST | Combine notes |
+| `/api/notes/import` | POST | Parse uploaded files into chunks |
+| `/api/notes/suggest-title` | POST | AI-suggest title for body text |
 
 ### Search (`routes/search.py`)
 
@@ -211,6 +213,19 @@ python -m wiki_notebook
 # Initialize database
 python -m wiki_notebook init
 ```
+
+## Chunking (`chunking.py`)
+
+### Functions
+
+| Function | Description |
+|----------|-------------|
+| `chunk_file()` | Split `.txt`/`.md` content into sections |
+| `chunk_by_headings()` | Split markdown by heading level |
+| `chunk_by_paragraphs()` | Split by double-newline breaks |
+| `chunk_by_words()` | Word-boundary fallback for dense text |
+
+Chunks shorter than `MIN_CHUNK_SIZE` (10 chars) are merged into the preceding chunk.
 
 ## Data Models (`models.py`)
 

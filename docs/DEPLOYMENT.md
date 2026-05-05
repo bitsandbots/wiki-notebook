@@ -71,7 +71,7 @@ sudo -u wiki-notebook .venv/bin/python scripts/init_db.py
 
 ```bash
 # Copy service file
-sudo cp .github/wiki-notebook.service /etc/systemd/system/
+sudo cp systemd/wiki-notebook.service /etc/systemd/system/
 
 # Verify service file
 sudo systemd-analyze verify /etc/systemd/system/wiki-notebook.service

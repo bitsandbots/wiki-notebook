@@ -10,7 +10,7 @@ echo ""
 echo "DEPRECATION NOTICE:"
 echo "  This script is deprecated. Use ./scripts/ship.sh instead."
 echo ""
-echo "Example: ./ship.sh 0.2.0 --deploy"
+echo "Example: ./scripts/ship.sh 0.3.1 --deploy"
 echo ""
 
 # Show help

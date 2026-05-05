@@ -4,14 +4,14 @@
 
 ### Required
 
-- **Python 3.11+** - Check with `python3 --version`
-- **SQLite with FTS5** - Most modern Linux distros include this
-- **Ollama** (optional) - For AI features
+- **Python 3.11+** — Check with `python3 --version`
+- **SQLite with FTS5** — Most modern Linux distros include this
+- **Linux** — Raspberry Pi OS Bookworm, Ubuntu 22.04+, Debian 11+
 
 ### Recommended
 
-- **Raspberry Pi 4/5** - 4GB+ RAM
-- **Linux** - Raspberry Pi OS Bookworm, Ubuntu 22.04+
+- **Raspberry Pi 4/5** — 4GB+ RAM for AI features
+- **Ollama** — For AI categorization, optimization, and title suggestions
 
 ## Installation Methods
 
@@ -21,52 +21,33 @@
 curl -sS https://install.wiki-notebook.coreconduit.com | bash
 ```
 
-### Method 2: Manual Installation
+Installs to `~/wiki-notebook` with a Python virtual environment. No root required.
 
-#### 1. Update System
-
-```bash
-sudo apt update && sudo apt upgrade -y
-```
-
-#### 2. Install Dependencies
+### Method 2: One-Liner with systemd Service
 
 ```bash
-# Python and pip
-sudo apt install -y python3 python3-pip sqlite3
-
-# Ollama (for AI features)
-curl -fsSL https://ollama.com/install.sh | sh
+curl -sS https://install.wiki-notebook.coreconduit.com | bash -s -- --systemd
 ```
 
-#### 3. Clone the Repository
+Creates a `wiki-notebook` system user, installs to `/opt/wiki-notebook`, and enables the systemd service to start on boot.
+
+### Method 3: Manual Installation
+
+#### 1. Clone and Set Up
 
 ```bash
 git clone https://github.com/coreconduit/wiki-notebook.git
 cd wiki-notebook
-```
-
-#### 4. Create Virtual Environment
-
-```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-#### 5. Install Package
-
-```bash
 pip install -e .
 ```
 
-#### 6. Configure Environment
+#### 2. Configure
 
 ```bash
-# Copy example environment file
-cp .env.example .env
-
-# Edit .env with your preferences
-nano .env
+# Edit .env with your preferences (created automatically on first run)
+cp .env.example .env 2>/dev/null || true
 ```
 
 Example `.env`:
@@ -80,71 +61,82 @@ OLLAMA_MODEL=qwen2.5:7b-instruct
 OLLAMA_TIMEOUT=30
 ```
 
-#### 7. Initialize Database
+#### 3. Initialize Database
 
 ```bash
-python -m wiki_notebook init
+python scripts/init_db.py
 ```
 
-#### 8. Start the Server
+#### 4. Start
 
 ```bash
 python -m wiki_notebook
 ```
 
-Visit `http://localhost:5000/` to verify.
+Visit `http://localhost:5000/`.
 
-### Method 3: Production Setup with systemd
+## Production Setup with systemd
 
-#### 1. Install as System Service
+### Automated (Recommended)
 
 ```bash
-# Copy service file
-sudo cp systemd/wiki-notebook.service /etc/systemd/system/
-
-# Reload systemd
-sudo systemctl daemon-reload
-
-# Create data directory
-sudo mkdir -p /var/lib/wiki-notebook
-sudo mkdir -p /var/www/wiki-notebook
-sudo chown -R www-data:www-data /var/lib/wiki-notebook
-sudo chown -R www-data:www-data /var/www/wiki-notebook
+bash scripts/install.sh --systemd --install-dir /opt/wiki-notebook
 ```
 
-#### 2. Configure and Enable
+This handles user creation, permissions, venv, database init, and service enablement in one step.
+
+### Manual systemd Setup
+
+#### 1. Create System User
 
 ```bash
-# Copy environment file
-sudo cp .env.example /etc/wiki-notebook.env
+sudo useradd --system --no-create-home \
+    --home-dir /opt/wiki-notebook \
+    --shell /usr/sbin/nologin \
+    wiki-notebook
+```
 
-# Edit environment
-sudo nano /etc/wiki-notebook.env
+#### 2. Install Application
 
-# Enable and start service
+```bash
+sudo mkdir -p /opt/wiki-notebook
+sudo cp -a . /opt/wiki-notebook
+sudo chown -R wiki-notebook:wiki-notebook /opt/wiki-notebook
+cd /opt/wiki-notebook
+sudo -u wiki-notebook python3 -m venv .venv
+sudo -u wiki-notebook .venv/bin/pip install -e .
+sudo -u wiki-notebook .venv/bin/python scripts/init_db.py
+```
+
+#### 3. Install Service
+
+```bash
+sudo cp systemd/wiki-notebook.service /etc/systemd/system/
+sudo systemctl daemon-reload
 sudo systemctl enable wiki-notebook
 sudo systemctl start wiki-notebook
 ```
 
-#### 3. Check Status
+#### 4. Verify
 
 ```bash
 sudo systemctl status wiki-notebook
 sudo journalctl -u wiki-notebook -f
+curl http://localhost:5000/api/health
 ```
 
 ## Post-Installation
 
-### Test Installation
+### Test the API
 
 ```bash
 # Health check
 curl http://localhost:5000/api/health
 
-# Create test note
+# Create a test note
 curl -X POST http://localhost:5000/api/notes \
   -H "Content-Type: application/json" \
-  -d '{"title":"Test","body":"Test body"}'
+  -d '{"title":"Hello","body":"Wiki Notebook is running!"}'
 ```
 
 ### Configure Ollama (Optional)
@@ -153,8 +145,51 @@ curl -X POST http://localhost:5000/api/notes \
 # Check Ollama is running
 curl http://localhost:11434/api/tags
 
-# Pull model if needed
+# Pull a model
 ollama pull qwen2.5:7b-instruct
+```
+
+## Updating
+
+### Manual Install
+
+```bash
+cd wiki-notebook
+git pull
+source .venv/bin/activate
+pip install -e .
+python scripts/init_db.py  # apply any schema changes
+```
+
+### systemd Install
+
+```bash
+cd /opt/wiki-notebook
+sudo systemctl stop wiki-notebook
+sudo -u wiki-notebook git pull origin main
+sudo -u wiki-notebook .venv/bin/pip install -e .
+sudo -u wiki-notebook .venv/bin/python scripts/init_db.py
+sudo systemctl start wiki-notebook
+```
+
+## Uninstallation
+
+### Manual Install
+
+```bash
+pkill -f "python -m wiki_notebook"
+rm -rf /path/to/wiki-notebook
+```
+
+### systemd Install
+
+```bash
+sudo systemctl stop wiki-notebook
+sudo systemctl disable wiki-notebook
+sudo rm /etc/systemd/system/wiki-notebook.service
+sudo systemctl daemon-reload
+sudo userdel wiki-notebook
+sudo rm -rf /opt/wiki-notebook
 ```
 
 ## Troubleshooting
@@ -162,79 +197,39 @@ ollama pull qwen2.5:7b-instruct
 ### Port Already in Use
 
 ```bash
-# Find process using port
 sudo lsof -i :5000
-
-# Kill it or change PORT in .env
+# Change PORT in .env or kill the conflicting process
 ```
 
 ### FTS5 Not Available
 
 ```bash
-# Check SQLite FTS5 support
 python3 -c "import sqlite3; print(sqlite3.sqlite_version)"
-
-# On Raspberry Pi, ensure full SQLite version:
-sudo apt install sqlite3 libsqlite3-dev
+# Raspberry Pi: sudo apt install sqlite3 libsqlite3-dev
 ```
 
 ### Ollama Connection Failed
 
 ```bash
-# Restart Ollama
 sudo systemctl restart ollama
-
-# Check logs
 sudo journalctl -u ollama -f
 ```
 
-### Permission Errors
+### Permission Errors (systemd)
 
 ```bash
-# Fix ownership
-sudo chown -R www-data:www-data /var/lib/wiki-notebook
-sudo chown -R www-data:www-data /var/www/wiki-notebook
+sudo chown -R wiki-notebook:wiki-notebook /opt/wiki-notebook
 ```
 
-## Uninstallation
-
-### Manual Remove
+### Service Won't Start
 
 ```bash
-# Stop server (if running)
-pkill -f "python -m wiki_notebook"
-
-# Remove directory
-rm -rf /path/to/wiki-notebook
-
-# Remove database
-rm -rf ~/.wiki-notebook
-```
-
-### systemd Remove
-
-```bash
-# Stop and disable service
-sudo systemctl stop wiki-notebook
-sudo systemctl disable wiki-notebook
-
-# Remove service file
-sudo rm /etc/systemd/system/wiki-notebook.service
-
-# Reload systemd
-sudo systemctl daemon-reload
-```
-
-## Updating
-
-```bash
-cd wiki-notebook
-git pull
-pip install -e .
-python -m wiki_notebook
+sudo journalctl -u wiki-notebook -n 50 --priority err
+sudo systemd-analyze verify /etc/systemd/system/wiki-notebook.service
 ```
 
 ## Support
 
-- GitHub: https://github.com/coreconduit/wiki-notebook
-- Issues: https://github.com/coreconduit/wiki-notebook/issues
+- **Repo**: https://github.com/coreconduit/wiki-notebook
+- **Issues**: https://github.com/coreconduit/wiki-notebook/issues
+- **Docs**: https://github.com/coreconduit/wiki-notebook/tree/main/docs

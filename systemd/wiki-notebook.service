@@ -1,32 +1,44 @@
 [Unit]
 Description=Wiki Notebook - Self-hosted offline-first journal and wiki
 Documentation=https://github.com/coreconduit/wiki-notebook
-After=network.target
+After=network.target ollama.service
 Wants=network.target
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
-WorkingDirectory=/var/www/wiki-notebook
-ExecStart=/usr/bin/python -m wiki_notebook
-Restart=on-failure
-RestartSec=5
+User=wiki-notebook
+Group=wiki-notebook
+WorkingDirectory=/opt/wiki-notebook
 
 # Environment
 Environment="FLASK_ENV=production"
-Environment="DATABASE_URL=/var/lib/wiki-notebook/notebook.db"
-Environment="OLLAMA_URL=http://localhost:11434"
-Environment="OLLAMA_MODEL=qwen2.5:7b-instruct"
+Environment="PYTHONUNBUFFERED=1"
+
+# Execution
+ExecStart=/opt/wiki-notebook/.venv/bin/python -m wiki_notebook
+Restart=on-failure
+RestartSec=10s
 
 # Security hardening
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/wiki-notebook
-ReadWritePaths=/var/www/wiki-notebook
 PrivateTmp=true
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ProtectProc=invisible
 RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictNamespaces=true
+
+# ReadWrite access: database + uploads
+ReadWritePaths=/opt/wiki-notebook/data
 
 # Logging
 StandardOutput=journal
