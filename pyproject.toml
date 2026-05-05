@@ -1,6 +1,6 @@
 [project]
 name = "wiki-notebook"
-version = "0.3.0"
+version = "0.3.1"
 description = "Self-hosted offline-first journal and wiki with AI categorization"
 readme = "README.md"
 license = { text = "MIT" }
