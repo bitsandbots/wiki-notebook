@@ -135,7 +135,9 @@ def like_search(
     """
     cursor = conn.cursor()
 
-    # For LIKE search, we search in title and body
+    # For LIKE search, we search in title and body.
+    # HTML notes store stripped plain text in search_text; use COALESCE so
+    # short queries match the readable text, not raw HTML tags.
     search_pattern = f"%{q}%"
 
     # Build base query
@@ -143,7 +145,7 @@ def like_search(
         SELECT id, title, body, category, tags, created_at, updated_at,
                optimized_at, source_ids
         FROM notes
-        WHERE (title LIKE :q OR body LIKE :q)
+        WHERE (title LIKE :q OR COALESCE(search_text, body) LIKE :q)
     """
 
     if category:
