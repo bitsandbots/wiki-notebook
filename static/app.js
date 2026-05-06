@@ -102,6 +102,7 @@ const state = {
   gridScrollY: 0,       // saved scroll position for grid restore
   hasUnsavedChanges: false,
   importChunks: [],     // proposed chunks from /api/notes/import
+  importAbort: null,    // AbortController for import-preview event listeners
 };
 
 function updateNoteStats(autosaveStatus = "") {
@@ -163,6 +164,11 @@ function navigateTo(view) {
   if (view !== "grid") {
     state.gridScrollY = window.scrollY;
   }
+  // Clean up import-preview listeners when leaving that view
+  if (view !== "import-preview" && state.importAbort) {
+    state.importAbort.abort();
+    state.importAbort = null;
+  }
   state.view = view;
   if (view === "grid") {
     state.currentId = null;
@@ -198,14 +204,12 @@ function renderImportPreview(data, files) {
   const headerEl = document.getElementById("import-preview-header");
   const listEl = document.getElementById("import-chunk-list");
   const toolbarEl = document.getElementById("import-chunk-toolbar");
-  const selectAllBtn = document.getElementById("import-select-all-btn");
-  const chunkSearch = document.getElementById("import-chunk-search");
   if (!headerEl || !listEl || !toolbarEl) return;
 
   // Abort previous listeners to prevent accumulation across re-renders
-  if (listEl._importAbort) listEl._importAbort.abort();
-  listEl._importAbort = new AbortController();
-  const signal = listEl._importAbort;
+  if (state.importAbort) state.importAbort.abort();
+  state.importAbort = new AbortController();
+  const signal = state.importAbort.signal;
 
   headerEl.replaceChildren();
   const heading = document.createElement("h2");
@@ -216,12 +220,14 @@ function renderImportPreview(data, files) {
 
   // Show toolbar and reset search
   toolbarEl.style.display = "";
-  if (chunkSearch) chunkSearch.value = "";
+  const chunkSearchEl = document.getElementById("import-chunk-search");
+  if (chunkSearchEl) chunkSearchEl.value = "";
 
-  // Select-all / deselect-all toggle (clone to remove old listeners)
-  if (selectAllBtn) {
-    const fresh = selectAllBtn.cloneNode(true);
-    selectAllBtn.parentNode.replaceChild(fresh, selectAllBtn);
+  // Select-all / deselect-all toggle — re-query fresh to avoid detached-node clone
+  const selectAllBtnEl = document.getElementById("import-select-all-btn");
+  if (selectAllBtnEl?.parentNode) {
+    const fresh = selectAllBtnEl.cloneNode(true);
+    selectAllBtnEl.parentNode.replaceChild(fresh, selectAllBtnEl);
     fresh.addEventListener("click", () => {
       const deselecting = fresh.textContent === "Deselect All";
       const allCheckboxes = document.querySelectorAll(
@@ -229,7 +235,7 @@ function renderImportPreview(data, files) {
       );
       for (const cb of allCheckboxes) {
         const card = cb.closest(".import-chunk-card");
-        if (card.style.display !== "none") {
+        if (card && card.style.display !== "none") {
           cb.checked = !deselecting;
         }
       }
@@ -237,10 +243,11 @@ function renderImportPreview(data, files) {
     });
   }
 
-  // Chunk search filter (clone to remove old listeners)
-  if (chunkSearch) {
-    const fresh = chunkSearch.cloneNode(true);
-    chunkSearch.parentNode.replaceChild(fresh, chunkSearch);
+  // Chunk search filter — re-query fresh to avoid detached-node clone
+  const chunkSearchCurrent = document.getElementById("import-chunk-search");
+  if (chunkSearchCurrent?.parentNode) {
+    const fresh = chunkSearchCurrent.cloneNode(true);
+    chunkSearchCurrent.parentNode.replaceChild(fresh, chunkSearchCurrent);
     fresh.addEventListener("input", debounce(() => filterImportChunks(fresh.value), 150));
   }
 
@@ -392,7 +399,10 @@ function updateImportSelectionCount() {
   if (!toolbar || !countEl) return;
 
   const allCheckboxes = document.querySelectorAll("#import-chunk-list .import-chunk-card input[type=\"checkbox\"]");
-  const visibleCheckboxes = [...allCheckboxes].filter(cb => cb.closest(".import-chunk-card")?.style.display !== "none");
+  const visibleCheckboxes = [...allCheckboxes].filter(cb => {
+    const card = cb.closest(".import-chunk-card");
+    return card && card.style.display !== "none";
+  });
   const checkedCount = visibleCheckboxes.filter(cb => cb.checked).length;
   const totalCount = visibleCheckboxes.length;
 
@@ -414,6 +424,7 @@ function filterImportChunks(query) {
 
   for (const card of cards) {
     const idx = parseInt(card.dataset.chunkIndex, 10);
+    if (isNaN(idx)) continue;
     const chunk = state.importChunks.find(c => c.index === idx);
     if (!q) {
       card.style.display = "";
@@ -433,6 +444,7 @@ async function handleImportSelected() {
   for (const card of cards) {
     if (card.style.display === "none") continue;
     const idx = parseInt(card.dataset.chunkIndex, 10);
+    if (isNaN(idx)) continue;
     const checkbox = card.querySelector('input[type="checkbox"]');
     if (!checkbox?.checked) continue;
 
@@ -455,9 +467,10 @@ async function handleImportSelected() {
     confirmBtn.textContent = "Importing\u2026";
   }
 
-  try {
-    let successCount = 0;
-    for (let i = 0; i < selected.length; i++) {
+  let successCount = 0;
+  const errors = [];
+  for (let i = 0; i < selected.length; i++) {
+    try {
       await api.create({
         title: selected[i].title,
         body: selected[i].body,
@@ -466,26 +479,30 @@ async function handleImportSelected() {
       });
       successCount++;
       // Uncheck successfully imported card to prevent duplicates on retry
-      const card = selected[i].card;
-      const cb = card?.querySelector('input[type="checkbox"]');
+      const cb = selected[i].card?.querySelector('input[type="checkbox"]');
       if (cb) cb.checked = false;
+    } catch (err) {
+      console.error(`Import error on note ${i + 1}:`, err);
+      errors.push(err);
     }
+  }
+
+  if (errors.length === 0) {
     state.importChunks = [];
     navigateTo("grid");
     api.categories().then((data) => renderCategories(data.items, state.category));
-  } catch (err) {
-    console.error("Import error:", err);
-    const remaining = selected.length - (successCount || 0);
+  } else {
     updateImportSelectionCount();
+    const remaining = selected.length - successCount;
     alert(
-      `Import partially failed: ${successCount || 0} of ${selected.length} notes created. ` +
+      `Import partially failed: ${successCount} of ${selected.length} notes created. ` +
       `${remaining} remaining — you can retry.`
     );
-  } finally {
-    if (confirmBtn) {
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = "Import Selected";
-    }
+  }
+
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    updateImportSelectionCount();
   }
 }
 
