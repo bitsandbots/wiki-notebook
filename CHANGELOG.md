@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-06
+
+### Added
+- **HTML file import** — `.html`/`.htm` files parsed as single chunks; FTS5 indexes stripped plain text via `COALESCE(search_text, body)`; DOMPurify preserves table/section/article elements in preview
+- **Import preview toolbar** — "Select All" / "Deselect All" toggle with live "N of M selected" counter; confirm button shows count ("Import 5 Selected")
+- **Chunk search filter** — client-side filter by title/body; hidden cards excluded from select-all and import counts
+- **Keyboard shortcuts** — `?` opens help modal; `Ctrl+A`/`Ctrl+Shift+A` select/deselect visible chunks; `Ctrl+F` focuses chunk search; `N`/`Ctrl+N` new note (grid); `E` toggle edit (detail); `Escape` clears filter then exits import preview
+
+### Changed
+- AbortController moved to `state.importAbort` (was DOM property); properly cleaned up in `navigateTo()` when leaving import-preview
+- Import loop restructured for per-note error recovery: successful imports uncheck their cards; failed count shown in alert with retry guidance
+
+### Fixed
+- `{ signal }` passed AbortController object instead of `.signal` — event listeners were never aborting (listener leak on re-render)
+- `card` null-guard missing in select-all loop and `updateImportSelectionCount`
+- `isNaN(idx)` guard added in `filterImportChunks` and `handleImportSelected`
+- AI suggest button had bare `catch {}` with no logging
+- `return` missing after Escape clears chunk search (fell through to `confirmLeaveEdit` check)
+
 ## [0.3.1] - 2026-05-05
 ### Added
 ### Changed
