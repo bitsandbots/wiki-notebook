@@ -379,6 +379,23 @@
               </button>
             </div>
             <div id="import-preview-header" class="import-preview-header"></div>
+            <div id="import-chunk-toolbar" class="import-chunk-toolbar" style="display: none">
+              <div class="import-chunk-toolbar-left">
+                <button type="button" id="import-select-all-btn" class="btn btn-sm btn-secondary">
+                  Select All
+                </button>
+                <span id="import-selection-count" class="import-selection-count"></span>
+              </div>
+              <div class="import-chunk-toolbar-right">
+                <input
+                  type="search"
+                  id="import-chunk-search"
+                  class="import-chunk-search-input"
+                  placeholder="Filter chunks\u2026"
+                  aria-label="Filter import chunks"
+                />
+              </div>
+            </div>
             <div id="import-chunk-list" class="import-chunk-list"></div>
             <div class="import-preview-actions">
               <button type="button" id="import-confirm-btn" class="btn btn-primary">

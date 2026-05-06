@@ -102,6 +102,7 @@ const state = {
   gridScrollY: 0,       // saved scroll position for grid restore
   hasUnsavedChanges: false,
   importChunks: [],     // proposed chunks from /api/notes/import
+  importAbort: null,    // AbortController for import-preview event listeners
 };
 
 function updateNoteStats(autosaveStatus = "") {
@@ -163,6 +164,11 @@ function navigateTo(view) {
   if (view !== "grid") {
     state.gridScrollY = window.scrollY;
   }
+  // Clean up import-preview listeners when leaving that view
+  if (view !== "import-preview" && state.importAbort) {
+    state.importAbort.abort();
+    state.importAbort = null;
+  }
   state.view = view;
   if (view === "grid") {
     state.currentId = null;
@@ -197,7 +203,13 @@ function renderImportPreview(data, files) {
 
   const headerEl = document.getElementById("import-preview-header");
   const listEl = document.getElementById("import-chunk-list");
-  if (!headerEl || !listEl) return;
+  const toolbarEl = document.getElementById("import-chunk-toolbar");
+  if (!headerEl || !listEl || !toolbarEl) return;
+
+  // Abort previous listeners to prevent accumulation across re-renders
+  if (state.importAbort) state.importAbort.abort();
+  state.importAbort = new AbortController();
+  const signal = state.importAbort.signal;
 
   headerEl.replaceChildren();
   const heading = document.createElement("h2");
@@ -205,6 +217,46 @@ function renderImportPreview(data, files) {
   const fileNames = [...files].map((f) => f.name).join(", ");
   heading.textContent = `Import Preview — ${fileNames} (${data.chunks.length} chunk${data.chunks.length !== 1 ? "s" : ""})`;
   headerEl.appendChild(heading);
+
+  // Show toolbar and reset search
+  toolbarEl.style.display = "";
+  const chunkSearchEl = document.getElementById("import-chunk-search");
+  if (chunkSearchEl) chunkSearchEl.value = "";
+
+  // Select-all / deselect-all toggle — re-query fresh to avoid detached-node clone
+  const selectAllBtnEl = document.getElementById("import-select-all-btn");
+  if (selectAllBtnEl?.parentNode) {
+    const fresh = selectAllBtnEl.cloneNode(true);
+    selectAllBtnEl.parentNode.replaceChild(fresh, selectAllBtnEl);
+    fresh.addEventListener("click", () => {
+      const deselecting = fresh.textContent === "Deselect All";
+      const allCheckboxes = document.querySelectorAll(
+        "#import-chunk-list .import-chunk-card input[type=\"checkbox\"]"
+      );
+      for (const cb of allCheckboxes) {
+        const card = cb.closest(".import-chunk-card");
+        if (card && card.style.display !== "none") {
+          cb.checked = !deselecting;
+        }
+      }
+      updateImportSelectionCount();
+    });
+  }
+
+  // Chunk search filter — re-query fresh to avoid detached-node clone
+  const chunkSearchCurrent = document.getElementById("import-chunk-search");
+  if (chunkSearchCurrent?.parentNode) {
+    const fresh = chunkSearchCurrent.cloneNode(true);
+    chunkSearchCurrent.parentNode.replaceChild(fresh, chunkSearchCurrent);
+    fresh.addEventListener("input", debounce(() => filterImportChunks(fresh.value), 150));
+  }
+
+  // Delegate checkbox changes to update selection count
+  listEl.addEventListener("change", (e) => {
+    if (e.target.matches("input[type=\"checkbox\"]")) {
+      updateImportSelectionCount();
+    }
+  }, { signal });
 
   listEl.replaceChildren();
 
@@ -277,6 +329,7 @@ function renderImportPreview(data, files) {
             suggestBtn.title = json.error?.message || "AI unavailable";
           }
         } catch {
+          console.error("AI suggest-title failed");
           suggestBtn.title = "Request failed";
         } finally {
           suggestBtn.disabled = false;
@@ -314,7 +367,7 @@ function renderImportPreview(data, files) {
   listEl.addEventListener("dragstart", (e) => {
     dragSrc = e.target.closest(".import-chunk-card");
     if (dragSrc) dragSrc.classList.add("dragging");
-  });
+  }, { signal });
   listEl.addEventListener("dragover", (e) => {
     e.preventDefault();
     const target = e.target.closest(".import-chunk-card");
@@ -322,7 +375,7 @@ function renderImportPreview(data, files) {
     const rect = target.getBoundingClientRect();
     const after = e.clientY > rect.top + rect.height / 2;
     listEl.insertBefore(dragSrc, after ? target.nextSibling : target);
-  });
+  }, { signal });
   listEl.addEventListener("dragend", () => {
     if (dragSrc) dragSrc.classList.remove("dragging");
     // Sync state.importChunks order to match DOM
@@ -333,9 +386,55 @@ function renderImportPreview(data, files) {
       (a, b) => newOrder.indexOf(a.index) - newOrder.indexOf(b.index)
     );
     dragSrc = null;
-  });
+  }, { signal });
 
+  updateImportSelectionCount();
   navigateTo("import-preview");
+}
+
+function updateImportSelectionCount() {
+  const toolbar = document.getElementById("import-chunk-toolbar");
+  const countEl = document.getElementById("import-selection-count");
+  const selectAllBtn = document.getElementById("import-select-all-btn");
+  if (!toolbar || !countEl) return;
+
+  const allCheckboxes = document.querySelectorAll("#import-chunk-list .import-chunk-card input[type=\"checkbox\"]");
+  const visibleCheckboxes = [...allCheckboxes].filter(cb => {
+    const card = cb.closest(".import-chunk-card");
+    return card && card.style.display !== "none";
+  });
+  const checkedCount = visibleCheckboxes.filter(cb => cb.checked).length;
+  const totalCount = visibleCheckboxes.length;
+
+  countEl.textContent = `${checkedCount} of ${totalCount} selected`;
+  if (selectAllBtn) {
+    selectAllBtn.textContent = checkedCount === totalCount ? "Deselect All" : "Select All";
+  }
+
+  // Update confirm button text
+  const confirmBtn = document.getElementById("import-confirm-btn");
+  if (confirmBtn) {
+    confirmBtn.textContent = checkedCount === 0 ? "Import Selected" : `Import ${checkedCount} Selected`;
+  }
+}
+
+function filterImportChunks(query) {
+  const cards = document.querySelectorAll("#import-chunk-list .import-chunk-card");
+  const q = query.toLowerCase().trim();
+
+  for (const card of cards) {
+    const idx = parseInt(card.dataset.chunkIndex, 10);
+    if (isNaN(idx)) continue;
+    const chunk = state.importChunks.find(c => c.index === idx);
+    if (!q) {
+      card.style.display = "";
+    } else {
+      const titleMatch = chunk?.title?.toLowerCase().includes(q);
+      const bodyMatch = chunk?.body?.toLowerCase().includes(q);
+      card.style.display = (titleMatch || bodyMatch) ? "" : "none";
+    }
+  }
+  updateImportSelectionCount();
 }
 
 async function handleImportSelected() {
@@ -343,7 +442,9 @@ async function handleImportSelected() {
   const selected = [];
 
   for (const card of cards) {
+    if (card.style.display === "none") continue;
     const idx = parseInt(card.dataset.chunkIndex, 10);
+    if (isNaN(idx)) continue;
     const checkbox = card.querySelector('input[type="checkbox"]');
     if (!checkbox?.checked) continue;
 
@@ -352,7 +453,7 @@ async function handleImportSelected() {
 
     const titleInput = card.querySelector(".import-chunk-title");
     const title = titleInput?.value?.trim() || chunk.title;
-    selected.push({ title, body: chunk.body, content_type: chunk.content_type });
+    selected.push({ title, body: chunk.body, content_type: chunk.content_type, card });
   }
 
   if (selected.length === 0) {
@@ -366,21 +467,42 @@ async function handleImportSelected() {
     confirmBtn.textContent = "Importing\u2026";
   }
 
-  try {
-    for (const note of selected) {
-      await api.create({ title: note.title, body: note.body, tags: [], content_type: note.content_type });
+  let successCount = 0;
+  const errors = [];
+  for (let i = 0; i < selected.length; i++) {
+    try {
+      await api.create({
+        title: selected[i].title,
+        body: selected[i].body,
+        tags: [],
+        content_type: selected[i].content_type,
+      });
+      successCount++;
+      // Uncheck successfully imported card to prevent duplicates on retry
+      const cb = selected[i].card?.querySelector('input[type="checkbox"]');
+      if (cb) cb.checked = false;
+    } catch (err) {
+      console.error(`Import error on note ${i + 1}:`, err);
+      errors.push(err);
     }
+  }
+
+  if (errors.length === 0) {
     state.importChunks = [];
     navigateTo("grid");
     api.categories().then((data) => renderCategories(data.items, state.category));
-  } catch (err) {
-    console.error("Import error:", err);
-    alert("Import failed: " + (err.message || "Unknown error"));
-  } finally {
-    if (confirmBtn) {
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = "Import Selected";
-    }
+  } else {
+    updateImportSelectionCount();
+    const remaining = selected.length - successCount;
+    alert(
+      `Import partially failed: ${successCount} of ${selected.length} notes created. ` +
+      `${remaining} remaining — you can retry.`
+    );
+  }
+
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    updateImportSelectionCount();
   }
 }
 
@@ -909,19 +1031,82 @@ function updateActionBar() {
 
 // Keyboard shortcuts
 function handleKeydown(e) {
-  // Ctrl+Enter to save
+  // Don't intercept shortcuts when user is typing in an input
+  const tag = document.activeElement?.tagName;
+  const isEditing = tag === "INPUT" || tag === "TEXTAREA";
+
+  // Ctrl+Enter to save (works everywhere)
   if (e.ctrlKey && e.key === "Enter") {
     e.preventDefault();
     handleSave();
     return;
   }
 
-  // / to focus search (prevent default to avoid typing / in search)
-  if (e.key === "/" && document.activeElement?.tagName !== "INPUT") {
+  // / to focus search (only when not already in an input)
+  if (e.key === "/" && !isEditing) {
     e.preventDefault();
     const searchInput = document.getElementById("search-input");
     searchInput?.focus();
     return;
+  }
+
+  // ? to show keyboard shortcuts help (only when not editing)
+  if (e.key === "?" && !isEditing) {
+    e.preventDefault();
+    showShortcutHelp();
+    return;
+  }
+
+  // Import preview — Ctrl+A select all, Ctrl+Shift+A deselect all, Ctrl+F filter
+  if (state.view === "import-preview" && !isEditing) {
+    if (e.ctrlKey && e.shiftKey && e.key === "A") {
+      e.preventDefault();
+      const allCb = document.querySelectorAll(
+        "#import-chunk-list .import-chunk-card input[type=\"checkbox\"]"
+      );
+      for (const cb of allCb) {
+        const card = cb.closest(".import-chunk-card");
+        if (card.style.display !== "none") cb.checked = false;
+      }
+      updateImportSelectionCount();
+      return;
+    }
+    if (e.ctrlKey && e.key === "a") {
+      e.preventDefault();
+      const allCb = document.querySelectorAll(
+        "#import-chunk-list .import-chunk-card input[type=\"checkbox\"]"
+      );
+      for (const cb of allCb) {
+        const card = cb.closest(".import-chunk-card");
+        if (card.style.display !== "none") cb.checked = true;
+      }
+      updateImportSelectionCount();
+      return;
+    }
+    if (e.ctrlKey && e.key === "f") {
+      e.preventDefault();
+      document.getElementById("import-chunk-search")?.focus();
+      return;
+    }
+  }
+
+  // Grid view — N or Ctrl+N to create new note
+  if (state.view === "grid" && !isEditing) {
+    if (e.key === "n" || (e.ctrlKey && e.key === "n")) {
+      e.preventDefault();
+      document.getElementById("new-note-btn")?.click();
+      return;
+    }
+    return;
+  }
+
+  // Detail view — E to toggle edit/preview
+  if (state.view === "detail" && !isEditing) {
+    if (e.key === "e") {
+      e.preventDefault();
+      document.getElementById("preview-toggle")?.click();
+      return;
+    }
   }
 
   // Escape to close editor / reset
@@ -930,12 +1115,105 @@ function handleKeydown(e) {
     if (searchInput?.value && searchInput === document.activeElement) {
       searchInput.value = "";
       renderApp();
+      return;
     } else if (state.view === "detail") {
       if (confirmLeaveEdit()) navigateTo("grid");
     } else if (state.view === "import-preview") {
+      const chunkSearch = document.getElementById("import-chunk-search");
+      if (chunkSearch === document.activeElement) {
+        // Let Escape clear the filter first, then second Escape exits preview
+        chunkSearch.value = "";
+        filterImportChunks("");
+        chunkSearch.blur();
+        return;
+      }
       navigateTo("grid");
     }
+    return;
   }
+}
+
+// Keyboard shortcut help modal — static trusted HTML, no user data
+function showShortcutHelp() {
+  let modal = document.getElementById("shortcut-help-modal");
+  if (modal) {
+    modal.style.display = "flex";
+    modal.querySelector(".shortcut-help-close")?.focus();
+    return;
+  }
+  modal = document.createElement("div");
+  modal.id = "shortcut-help-modal";
+  modal.className = "shortcut-help-overlay";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-label", "Keyboard shortcuts");
+
+  const buildRow = (key, desc) => {
+    const tr = document.createElement("tr");
+    const tdKey = document.createElement("td");
+    const kbd = document.createElement("kbd");
+    kbd.textContent = key;
+    tdKey.appendChild(kbd);
+    const tdDesc = document.createElement("td");
+    tdDesc.textContent = desc;
+    tr.appendChild(tdKey);
+    tr.appendChild(tdDesc);
+    return tr;
+  };
+
+  const buildSection = (label) => {
+    const tr = document.createElement("tr");
+    tr.className = "shortcut-context";
+    const td = document.createElement("td");
+    td.setAttribute("colspan", "2");
+    td.textContent = label;
+    tr.appendChild(td);
+    return tr;
+  };
+
+  const content = document.createElement("div");
+  content.className = "shortcut-help-content";
+  const h2 = document.createElement("h2");
+  h2.textContent = "Keyboard Shortcuts";
+  content.appendChild(h2);
+
+  const table = document.createElement("table");
+  table.className = "shortcut-help-table";
+  const tbody = document.createElement("tbody");
+  [
+    buildRow("Ctrl+Enter", "Save note"),
+    buildRow("/", "Focus search"),
+    buildRow("Escape", "Close / go back"),
+    buildRow("?", "Show this help"),
+    buildSection("Grid view"),
+    buildRow("N / Ctrl+N", "New note"),
+    buildRow("Enter / Space", "Open focused note"),
+    buildSection("Detail view"),
+    buildRow("E", "Toggle edit / preview"),
+    buildSection("Import preview"),
+    buildRow("Ctrl+A", "Select all chunks"),
+    buildRow("Ctrl+Shift+A", "Deselect all chunks"),
+    buildRow("Ctrl+F", "Filter chunks"),
+  ].forEach((tr) => tbody.appendChild(tr));
+  table.appendChild(tbody);
+  content.appendChild(table);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "btn btn-primary shortcut-help-close";
+  closeBtn.textContent = "Close";
+  content.appendChild(closeBtn);
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal || e.target.closest(".shortcut-help-close")) {
+      modal.remove();
+    }
+  });
+  modal.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") modal.remove();
+  });
+  modal.style.display = "flex";
+  closeBtn.focus();
 }
 
 // Initialize
