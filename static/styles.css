@@ -1268,6 +1268,48 @@ a:hover {
   margin-bottom: 1rem;
 }
 
+.import-chunk-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--cc-border-subtle);
+}
+
+.import-chunk-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.import-chunk-toolbar-right {
+  flex: 0 0 auto;
+  max-width: 220px;
+}
+
+.import-chunk-search-input {
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  background: var(--cc-bg-elevated);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: var(--cc-radius-sm);
+  color: var(--cc-text-primary);
+  outline: none;
+}
+
+.import-chunk-search-input:focus {
+  border-color: var(--cc-blue-500);
+}
+
+.import-selection-count {
+  font-family: var(--cc-font-mono);
+  font-size: 0.72rem;
+  color: var(--cc-text-muted);
+}
+
 .import-chunk-list {
   display: flex;
   flex-direction: column;
@@ -1395,4 +1437,71 @@ a:hover {
   align-items: center;
   padding-top: 1rem;
   border-top: 1px solid var(--cc-border-subtle);
+}
+
+/* Keyboard shortcut help modal */
+.shortcut-help-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+}
+
+.shortcut-help-content {
+  background: var(--cc-bg-card);
+  border-radius: var(--cc-radius-md);
+  padding: 1.5rem 2rem;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.shortcut-help-content h2 {
+  font-family: var(--cc-font-display);
+  font-size: 1.1rem;
+  margin: 0 0 1rem;
+  color: var(--cc-text-primary);
+}
+
+.shortcut-help-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+}
+
+.shortcut-help-table td {
+  padding: 0.35rem 0;
+  vertical-align: middle;
+}
+
+.shortcut-help-table td:first-child {
+  white-space: nowrap;
+  padding-right: 1rem;
+}
+
+.shortcut-help-table kbd {
+  font-family: var(--cc-font-mono);
+  font-size: 0.72rem;
+  background: var(--cc-bg-elevated);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  white-space: nowrap;
+}
+
+.shortcut-context td {
+  padding-top: 0.75rem;
+  font-family: var(--cc-font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cc-text-faint);
+}
+
+.shortcut-help-close {
+  width: 100%;
 }
