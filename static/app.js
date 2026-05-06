@@ -202,6 +202,11 @@ function renderImportPreview(data, files) {
   const chunkSearch = document.getElementById("import-chunk-search");
   if (!headerEl || !listEl || !toolbarEl) return;
 
+  // Abort previous listeners to prevent accumulation across re-renders
+  if (listEl._importAbort) listEl._importAbort.abort();
+  listEl._importAbort = new AbortController();
+  const signal = listEl._importAbort;
+
   headerEl.replaceChildren();
   const heading = document.createElement("h2");
   heading.className = "section-title";
@@ -244,7 +249,7 @@ function renderImportPreview(data, files) {
     if (e.target.matches("input[type=\"checkbox\"]")) {
       updateImportSelectionCount();
     }
-  });
+  }, { signal });
 
   listEl.replaceChildren();
 
@@ -317,6 +322,7 @@ function renderImportPreview(data, files) {
             suggestBtn.title = json.error?.message || "AI unavailable";
           }
         } catch {
+          console.error("AI suggest-title failed");
           suggestBtn.title = "Request failed";
         } finally {
           suggestBtn.disabled = false;
@@ -354,7 +360,7 @@ function renderImportPreview(data, files) {
   listEl.addEventListener("dragstart", (e) => {
     dragSrc = e.target.closest(".import-chunk-card");
     if (dragSrc) dragSrc.classList.add("dragging");
-  });
+  }, { signal });
   listEl.addEventListener("dragover", (e) => {
     e.preventDefault();
     const target = e.target.closest(".import-chunk-card");
@@ -362,7 +368,7 @@ function renderImportPreview(data, files) {
     const rect = target.getBoundingClientRect();
     const after = e.clientY > rect.top + rect.height / 2;
     listEl.insertBefore(dragSrc, after ? target.nextSibling : target);
-  });
+  }, { signal });
   listEl.addEventListener("dragend", () => {
     if (dragSrc) dragSrc.classList.remove("dragging");
     // Sync state.importChunks order to match DOM
@@ -373,7 +379,7 @@ function renderImportPreview(data, files) {
       (a, b) => newOrder.indexOf(a.index) - newOrder.indexOf(b.index)
     );
     dragSrc = null;
-  });
+  }, { signal });
 
   updateImportSelectionCount();
   navigateTo("import-preview");
@@ -386,7 +392,7 @@ function updateImportSelectionCount() {
   if (!toolbar || !countEl) return;
 
   const allCheckboxes = document.querySelectorAll("#import-chunk-list .import-chunk-card input[type=\"checkbox\"]");
-  const visibleCheckboxes = [...allCheckboxes].filter(cb => cb.closest(".import-chunk-card").style.display !== "none");
+  const visibleCheckboxes = [...allCheckboxes].filter(cb => cb.closest(".import-chunk-card")?.style.display !== "none");
   const checkedCount = visibleCheckboxes.filter(cb => cb.checked).length;
   const totalCount = visibleCheckboxes.length;
 
@@ -435,7 +441,7 @@ async function handleImportSelected() {
 
     const titleInput = card.querySelector(".import-chunk-title");
     const title = titleInput?.value?.trim() || chunk.title;
-    selected.push({ title, body: chunk.body, content_type: chunk.content_type });
+    selected.push({ title, body: chunk.body, content_type: chunk.content_type, card });
   }
 
   if (selected.length === 0) {
@@ -450,15 +456,31 @@ async function handleImportSelected() {
   }
 
   try {
-    for (const note of selected) {
-      await api.create({ title: note.title, body: note.body, tags: [], content_type: note.content_type });
+    let successCount = 0;
+    for (let i = 0; i < selected.length; i++) {
+      await api.create({
+        title: selected[i].title,
+        body: selected[i].body,
+        tags: [],
+        content_type: selected[i].content_type,
+      });
+      successCount++;
+      // Uncheck successfully imported card to prevent duplicates on retry
+      const card = selected[i].card;
+      const cb = card?.querySelector('input[type="checkbox"]');
+      if (cb) cb.checked = false;
     }
     state.importChunks = [];
     navigateTo("grid");
     api.categories().then((data) => renderCategories(data.items, state.category));
   } catch (err) {
     console.error("Import error:", err);
-    alert("Import failed: " + (err.message || "Unknown error"));
+    const remaining = selected.length - (successCount || 0);
+    updateImportSelectionCount();
+    alert(
+      `Import partially failed: ${successCount || 0} of ${selected.length} notes created. ` +
+      `${remaining} remaining — you can retry.`
+    );
   } finally {
     if (confirmBtn) {
       confirmBtn.disabled = false;
@@ -1076,6 +1098,7 @@ function handleKeydown(e) {
     if (searchInput?.value && searchInput === document.activeElement) {
       searchInput.value = "";
       renderApp();
+      return;
     } else if (state.view === "detail") {
       if (confirmLeaveEdit()) navigateTo("grid");
     } else if (state.view === "import-preview") {
@@ -1165,7 +1188,7 @@ function showShortcutHelp() {
   document.body.appendChild(modal);
 
   modal.addEventListener("click", (e) => {
-    if (e.target === modal || e.target.classList.contains("shortcut-help-close")) {
+    if (e.target === modal || e.target.closest(".shortcut-help-close")) {
       modal.remove();
     }
   });
